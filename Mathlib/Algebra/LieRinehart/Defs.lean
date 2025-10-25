@@ -4,16 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Leonid Ryvkin
 -/
 
-
-import Mathlib.Algebra.Field.Defs
-import Mathlib.Algebra.Ring.Defs
-import Mathlib.Algebra.Algebra.Defs
-import Mathlib.Algebra.Module.Defs
-import Mathlib.Algebra.Lie.Basic
-import Mathlib.RingTheory.Derivation.Basic
 import Mathlib.RingTheory.Derivation.Lie
-import Mathlib.Algebra.Module.LinearMap.Basic
-
 
 /-!
 # Lie Rinehart algebras
@@ -51,27 +42,49 @@ namespace LieRinehart
 and an `A`-linear map `F: L→L'` which is also a Lie algebra homomorphism.
 -/
 structure Hom {R A A' : Type*} [CommRing R] [CommRing A] [Algebra R A] [CommRing A']
-[Algebra R A'] (σ : A →+* A') {L L' : Type*} [LieRing L] [Module A L]
+[Algebra R A'] (σ : A →ₐ[R] A') {L L' : Type*} [LieRing L] [Module A L]
 [LieAlgebra R L] [IsScalarTower R A L] [LieRing L'] [Module A' L']
 [LieAlgebra R L'] [IsScalarTower R A' L']
 (ρ : L →ₗ[A] Derivation R A A) (ρ' : L' →ₗ[A'] Derivation R A' A')
-[LieRinehartAlgebra ρ] [LieRinehartAlgebra ρ'] extends LinearMap σ L L' where
-isLie : ∀ (x y : L), toFun ⁅x,y⁆ = ⁅ toFun x, toFun y ⁆
-anchorcomp: ∀ (a : A) (l : L), σ ((ρ l) a)  =  ((ρ' (toFun l)) (σ a))
+[LieRinehartAlgebra ρ] [LieRinehartAlgebra ρ'] extends L →ₛₗ[σ.toRingHom] L' where
+isLie : ∀ (x y : L), toLinearMap ⁅x,y⁆ = ⁅ toLinearMap x, toLinearMap y ⁆
+anchorcomp: ∀ (a : A) (l : L), σ ((ρ l) a)  =  ((ρ' (toLinearMap l)) (σ a))
+
+@[inherit_doc]
+notation:25 ρ " →ₗ⁅" σ:25 "⁆ " ρ':0 => LieRinehart.Hom σ ρ ρ'
+
+
+
+
 
 
 variable {R : Type} [CommRing R]
+
 variable {A : Type} [CommRing A] [Algebra R A]
 variable {L : Type} [LieRing L] [Module A L] [LieAlgebra R L]
 [IsScalarTower R A L]
+variable (ρ : L →ₗ[A] Derivation R A A) [LieRinehartAlgebra ρ]
+
+
 variable {A' : Type} [CommRing A'] [Algebra R A']
 variable {L' : Type} [LieRing L'] [Module A' L'] [LieAlgebra R L']
 [IsScalarTower R A' L']
+variable (ρ' : L' →ₗ[A'] Derivation R A' A') [LieRinehartAlgebra ρ']
+
 variable {A'' : Type} [CommRing A''] [Algebra R A'']
 variable {L'' : Type} [LieRing L''] [Module A'' L''] [LieAlgebra R L'']
+[IsScalarTower R A'' L'']
+variable (ρ'' : L'' →ₗ[A''] Derivation R A'' A'') [LieRinehartAlgebra ρ'']
+
 variable (σ : A →ₐ[R] A')
-variable (ρ : L →ₗ[A] Derivation R A A) [LieRinehartAlgebra ρ]
-variable (ρ' : L' →ₗ[A'] Derivation R A' A') [LieRinehartAlgebra ρ']
+variable (σ' : A' →ₐ[R] A'')
+
+
+
+
+
+
+
 
 
 /-- `Der_R(A,A)` itself is a Lie-Rinehart algebra with `ρ=id`
@@ -85,13 +98,52 @@ leibniz:= by
     Derivation.leibniz, LinearMap.id_coe, id_eq, Derivation.coe_add, Pi.add_apply];
   ring
 
-/-- The identity morphism of a Lie Rinehart algebra L
+--TODO: Make this callable and add doc
+def toLieHom (f : ρ →ₗ⁅σ⁆ ρ') : L →ₗ⁅R⁆ L' := {
+  f.toLinearMap.toAddMonoidHom with
+  map_smul' := by
+    intros r x
+    simp
+    simp only [(IsScalarTower.algebraMap_smul (R:=R) (A:=A) (M:=L) r x).symm]
+    calc f.toLinearMap ((algebraMap R A) r • x)
+      = σ.toRingHom ((algebraMap R A) r) • f.toLinearMap (x) :=
+       by rw [f.map_smulₛₗ (R:= A) (c := (algebraMap R A) r) (M:=L) (x:=x)]
+      _ = r • f.toLinearMap (x) := by simp
+  map_lie' := by
+    apply f.isLie
+  }
+
+/-- The identity morphism of a Lie Rinehart algebra
 -/
-def id : LieRinehart.Hom (RingHom.id A) ρ ρ :=
+def id : LieRinehart.Hom (AlgHom.id R A) ρ ρ :=
 {
   (LinearMap.id : L→ₗ[A] L) with
   isLie:= by simp
   anchorcomp := by simp
 }
+
+variable (f : ρ →ₗ⁅σ⁆ ρ')
+variable (g : ρ' →ₗ⁅σ'⁆ ρ'')
+
+--todo: add doc
+def comp (f : ρ →ₗ⁅σ⁆ ρ') (g : ρ' →ₗ⁅σ'⁆ ρ'') : ρ →ₗ⁅AlgHom.comp σ' σ⁆ ρ'' :=
+  { g.toLinearMap.toAddMonoidHom.comp f.toLinearMap with
+  -- The map_smul and the .toMonoidHom are needed because RingHomCompTriple instance is not
+  -- recognized
+    map_smul' := by simp
+    isLie := by
+      intros x y
+      simp
+      calc  g.toLinearMap (f.toLinearMap ⁅x, y⁆)
+        = g.toLinearMap ( ⁅f.toLinearMap x, f.toLinearMap  y⁆ ) := by rw [f.isLie]
+        _ = ⁅ g.toLinearMap (f.toLinearMap x), g.toLinearMap (f.toLinearMap  y) ⁆ :=by rw [g.isLie]
+    anchorcomp := by
+      simp
+      intros a l
+      calc  σ' (σ ((ρ l) a))
+        = σ' ((ρ' (f.toLinearMap l)) (σ a)) := by rw [f.anchorcomp]
+        _ = (ρ'' (g.toLinearMap (f.toLinearMap l))) (σ' (σ a)) := by rw [g.anchorcomp]
+  }
+
 
 end LieRinehart
