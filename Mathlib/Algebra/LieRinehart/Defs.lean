@@ -39,7 +39,8 @@ namespace LieRinehart
 
 
 /-- A homomorphism of Lie-Rinehart algebras `(A,L)`, `(A',L')` consists of an algebra map `σ:A→ A'`
-and an `A`-linear map `F: L→L'` which is also a Lie algebra homomorphism.
+and an `A`-linear map `F: L→L'` which is also a Lie algebra homomorphism and is compatible
+with the anchors.
 -/
 structure Hom {R A A' : Type*} [CommRing R] [CommRing A] [Algebra R A] [CommRing A']
 [Algebra R A'] (σ : A →ₐ[R] A') {L L' : Type*} [LieRing L] [Module A L]
@@ -52,9 +53,6 @@ anchorcomp: ∀ (a : A) (l : L), σ ((ρ l) a)  =  ((ρ' (toLinearMap l)) (σ a)
 
 @[inherit_doc]
 notation:25 ρ " →ₗ⁅" σ:25 "⁆ " ρ':0 => LieRinehart.Hom σ ρ ρ'
-
-
-
 
 
 
@@ -79,13 +77,8 @@ variable (ρ'' : L'' →ₗ[A''] Derivation R A'' A'') [LieRinehartAlgebra ρ'']
 variable (σ : A →ₐ[R] A')
 variable (σ' : A' →ₐ[R] A'')
 
-
-
-
-
-
-
-
+variable (f : ρ →ₗ⁅σ⁆ ρ')
+variable (g : ρ' →ₗ⁅σ'⁆ ρ'')
 
 /-- `Der_R(A,A)` itself is a Lie-Rinehart algebra with `ρ=id`
 -/
@@ -122,8 +115,6 @@ def id : LieRinehart.Hom (AlgHom.id R A) ρ ρ :=
   anchorcomp := by simp
 }
 
-variable (f : ρ →ₗ⁅σ⁆ ρ')
-variable (g : ρ' →ₗ⁅σ'⁆ ρ'')
 
 --todo: add doc
 def comp (f : ρ →ₗ⁅σ⁆ ρ') (g : ρ' →ₗ⁅σ'⁆ ρ'') : ρ →ₗ⁅AlgHom.comp σ' σ⁆ ρ'' :=
