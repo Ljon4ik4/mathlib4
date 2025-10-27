@@ -31,7 +31,7 @@ is satisfied.
 class LieRinehartAlgebra {R A L : Type*} [CommRing R] [CommRing A] [Algebra R A]
 [LieRing L] [Module A L] [LieAlgebra R L] [IsScalarTower R A L]
 (ρ : L →ₗ[A] Derivation R A A) where
-islie : ∀ (x y : L), ρ ⁅x,y⁆ = ⁅ ρ x, ρ y ⁆
+map_lie' : ∀ (x y : L), ρ ⁅x,y⁆ = ⁅ ρ x, ρ y ⁆
 leibniz : ∀ (x y : L) (a : A), ⁅x,a • y⁆ = a• ⁅ x, y ⁆ + ((ρ (x)) (a))•y
 
 
@@ -48,7 +48,7 @@ structure Hom {R A A' : Type*} [CommRing R] [CommRing A] [Algebra R A] [CommRing
 [LieAlgebra R L'] [IsScalarTower R A' L']
 (ρ : L →ₗ[A] Derivation R A A) (ρ' : L' →ₗ[A'] Derivation R A' A')
 [LieRinehartAlgebra ρ] [LieRinehartAlgebra ρ'] extends L →ₛₗ[σ.toRingHom] L' where
-isLie : ∀ (x y : L), toLinearMap ⁅x,y⁆ = ⁅ toLinearMap x, toLinearMap y ⁆
+map_lie' : ∀ (x y : L), toLinearMap ⁅x,y⁆ = ⁅ toLinearMap x, toLinearMap y ⁆
 anchorcomp: ∀ (a : A) (l : L), σ ((ρ l) a)  =  ((ρ' (toLinearMap l)) (σ a))
 
 @[inherit_doc]
@@ -83,7 +83,7 @@ variable (g : ρ' →ₗ⁅σ'⁆ ρ'')
 /-- `Der_R(A,A)` itself is a Lie-Rinehart algebra with `ρ=id`
 -/
 instance : LieRinehartAlgebra (LinearMap.id :(Derivation R A A)→ₗ[A] (Derivation R A A)) where
-islie:= by simp
+map_lie':= by simp
 leibniz:= by
   intros x y a
   ext b
@@ -91,43 +91,68 @@ leibniz:= by
     Derivation.leibniz, LinearMap.id_coe, id_eq, Derivation.coe_add, Pi.add_apply];
   ring
 
---TODO: Make this callable and add doc
-def toLieHom (f : ρ →ₗ⁅σ⁆ ρ') : L →ₗ⁅R⁆ L' := {
-  f.toLinearMap.toAddMonoidHom with
-  map_smul' := by
-    intros r x
-    simp
-    simp only [(IsScalarTower.algebraMap_smul (R:=R) (A:=A) (M:=L) r x).symm]
-    calc f.toLinearMap ((algebraMap R A) r • x)
-      = σ.toRingHom ((algebraMap R A) r) • f.toLinearMap (x) :=
-       by rw [f.map_smulₛₗ (R:= A) (c := (algebraMap R A) r) (M:=L) (x:=x)]
-      _ = r • f.toLinearMap (x) := by simp
-  map_lie' := by
-    apply f.isLie
+namespace Hom
+
+--TODO: Move elsewhere
+/-- Interpreting a `σ:A→ₐ[R]A'` semilinear map as an `R`-linear map.
+-/
+def asRlin (h : L →ₛₗ[σ.toRingHom] L') : ( L →ₗ[R] L') :=
+  {
+    h.toAddMonoidHom with
+    map_smul' := by
+      intros r x
+      simp
+      simp only [←(IsScalarTower.algebraMap_smul (R:=R) (A:=A) (M:=L) r x)]
+      calc h ((algebraMap R A) r • x)
+        = σ.toRingHom ((algebraMap R A) r) • h (x) :=
+          by rw [h.map_smulₛₗ (R:= A) (c := (algebraMap R A) r) (M:=L) (x:=x)]
+        _ = r • h (x) := by simp
   }
+
+
+/-- Recovers the Lie algebra morphism underlying a Lie-Rinehart algbera homomorophism
+-/
+def toLieHom (f : ρ →ₗ⁅σ⁆ ρ') : L →ₗ⁅R⁆ L' := {
+  --f.toLinearMap.toAddMonoidHom
+  asRlin σ f.toLinearMap with
+  map_lie' := by
+    apply f.map_lie'
+  }
+
+end Hom
+
 
 /-- The identity morphism of a Lie Rinehart algebra
 -/
 def id : LieRinehart.Hom (AlgHom.id R A) ρ ρ :=
 {
   (LinearMap.id : L→ₗ[A] L) with
-  isLie:= by simp
+  map_lie':= by simp
   anchorcomp := by simp
 }
 
 
---todo: add doc
+/--
+helper so lean recognizes that the composition of semilinear maps over algebras is semilinear
+in LieRinehart.Hom.comp
+-/
+instance instCompTriple (σ : A →ₐ[R] A') (σ' : A' →ₐ[R] A'') :
+  RingHomCompTriple σ.toRingHom σ'.toRingHom (σ'.comp σ).toRingHom := ⟨rfl⟩
+
+/-- The module homomorphism and the Lie algebra homomorphism undelying a Lie Rinehart homomorphism
+are the same function
+-/
+theorem ModHomeqLieHom (f : ρ →ₗ⁅σ⁆ ρ') (x : L): f.toLinearMap  x= (f.toLieHom) x:= by rfl
+
+/-- The composition of Lie Rinehart algebra homomorphisms is again a homomorphism
+-/
 def comp (f : ρ →ₗ⁅σ⁆ ρ') (g : ρ' →ₗ⁅σ'⁆ ρ'') : ρ →ₗ⁅AlgHom.comp σ' σ⁆ ρ'' :=
-  { g.toLinearMap.toAddMonoidHom.comp f.toLinearMap with
-  -- The map_smul and the .toMonoidHom are needed because RingHomCompTriple instance is not
-  -- recognized
-    map_smul' := by simp
-    isLie := by
+  { g.toLinearMap.comp f.toLinearMap with
+    map_lie' := by
       intros x y
       simp
-      calc  g.toLinearMap (f.toLinearMap ⁅x, y⁆)
-        = g.toLinearMap ( ⁅f.toLinearMap x, f.toLinearMap  y⁆ ) := by rw [f.isLie]
-        _ = ⁅ g.toLinearMap (f.toLinearMap x), g.toLinearMap (f.toLinearMap  y) ⁆ :=by rw [g.isLie]
+      repeat rw [ModHomeqLieHom]
+      simp
     anchorcomp := by
       simp
       intros a l
