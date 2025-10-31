@@ -37,5 +37,3 @@ def LinearMap.RestrictScalarsAlgtoRing (f : L →ₛₗ[σ.toRingHom] L') :
           by rw [f.map_smulₛₗ (R:= A) (c := (algebraMap R A) r) (M:=L) (x:=x)]
         _ = r • f (x) := by simp
   }
-
-variable (f : L →ₛₗ[(σ.toRingHom)] L')

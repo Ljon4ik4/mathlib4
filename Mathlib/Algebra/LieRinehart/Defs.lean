@@ -140,5 +140,4 @@ def comp (f : ρ →ₗ⁅σ⁆ ρ') (g : ρ' →ₗ⁅σ'⁆ ρ'') : ρ →ₗ�
         _ = (ρ'' (g.toLinearMap (f.toLinearMap l))) (σ' (σ a)) := by rw [g.anchorcomp]
   }
 
-
 end LieRinehart
