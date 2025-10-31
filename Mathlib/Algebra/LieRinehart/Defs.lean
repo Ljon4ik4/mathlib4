@@ -5,6 +5,7 @@ Authors: Leonid Ryvkin
 -/
 
 import Mathlib.RingTheory.Derivation.Lie
+import Mathlib.Algebra.LieRinehart.utils
 
 /-!
 # Lie Rinehart algebras
@@ -93,28 +94,11 @@ leibniz:= by
 
 namespace Hom
 
---TODO: Move elsewhere
-/-- Interpreting a `σ:A→ₐ[R]A'` semilinear map as an `R`-linear map.
--/
-def asRlin (h : L →ₛₗ[σ.toRingHom] L') : ( L →ₗ[R] L') :=
-  {
-    h.toAddMonoidHom with
-    map_smul' := by
-      intros r x
-      simp
-      simp only [←(IsScalarTower.algebraMap_smul (R:=R) (A:=A) (M:=L) r x)]
-      calc h ((algebraMap R A) r • x)
-        = σ.toRingHom ((algebraMap R A) r) • h (x) :=
-          by rw [h.map_smulₛₗ (R:= A) (c := (algebraMap R A) r) (M:=L) (x:=x)]
-        _ = r • h (x) := by simp
-  }
-
 
 /-- Recovers the Lie algebra morphism underlying a Lie-Rinehart algbera homomorophism
 -/
 def toLieHom (f : ρ →ₗ⁅σ⁆ ρ') : L →ₗ⁅R⁆ L' := {
-  --f.toLinearMap.toAddMonoidHom
-  asRlin σ f.toLinearMap with
+  f.RestrictScalarsAlgtoRing with
   map_lie' := by
     apply f.map_lie'
   }
@@ -132,16 +116,11 @@ def id : LieRinehart.Hom (AlgHom.id R A) ρ ρ :=
 }
 
 
-/--
-helper so lean recognizes that the composition of semilinear maps over algebras is semilinear
-in LieRinehart.Hom.comp
--/
-instance instCompTriple (σ : A →ₐ[R] A') (σ' : A' →ₐ[R] A'') :
-  RingHomCompTriple σ.toRingHom σ'.toRingHom (σ'.comp σ).toRingHom := ⟨rfl⟩
 
 /-- The module homomorphism and the Lie algebra homomorphism undelying a Lie Rinehart homomorphism
 are the same function
 -/
+@[simp]
 theorem ModHomeqLieHom (f : ρ →ₗ⁅σ⁆ ρ') (x : L): f.toLinearMap  x= (f.toLieHom) x:= by rfl
 
 /-- The composition of Lie Rinehart algebra homomorphisms is again a homomorphism
