@@ -29,7 +29,7 @@ with an `A`-module `L` equipped with a Lie bracket and a Lie algebra and module 
 `ρ:L→ Der_R(A,A)` to the derivations of `A`, such that the Leibniz rule `⁅x,a•y⁆=a•⁅x,y⁆+ρ(x)(a)•y`
 is satisfied.
 -/
-class LieRinehartAlgebra {R A L : Type*} [CommRing R] [CommRing A] [Algebra R A]
+class LieRinehartAlgebra (R A L : Type*) [CommRing R] [CommRing A] [Algebra R A]
 [LieRing L] [Module A L] [LieAlgebra R L] [IsScalarTower R A L]
 (ρ : L →ₗ[A] Derivation R A A) where
 map_lie' : ∀ (x y : L), ρ ⁅x,y⁆ = ⁅ ρ x, ρ y ⁆
@@ -44,17 +44,13 @@ and an `A`-linear map `F: L→L'` which is also a Lie algebra homomorphism and i
 with the anchors.
 -/
 structure Hom {R A A' : Type*} [CommRing R] [CommRing A] [Algebra R A] [CommRing A']
-[Algebra R A'] (σ : A →ₐ[R] A') {L L' : Type*} [LieRing L] [Module A L]
-[LieAlgebra R L] [IsScalarTower R A L] [LieRing L'] [Module A' L']
-[LieAlgebra R L'] [IsScalarTower R A' L']
-(ρ : L →ₗ[A] Derivation R A A) (ρ' : L' →ₗ[A'] Derivation R A' A')
-[LieRinehartAlgebra ρ] [LieRinehartAlgebra ρ'] extends L →ₛₗ[σ.toRingHom] L' where
+[Algebra R A'] (σ : A →ₐ[R] A') (L : Type) [LieRing L] [Module A L]
+[LieAlgebra R L] [IsScalarTower R A L] (ρ : L →ₗ[A] Derivation R A A) (L' : Type)
+[LieRing L'] [Module A' L'] [LieAlgebra R L'] [IsScalarTower R A' L']
+(ρ' : L' →ₗ[A'] Derivation R A' A')
+[LieRinehartAlgebra R A L ρ] [LieRinehartAlgebra R A' L' ρ'] extends L →ₛₗ[σ.toRingHom] L' where
 map_lie' : ∀ (x y : L), toLinearMap ⁅x,y⁆ = ⁅ toLinearMap x, toLinearMap y ⁆
 anchorcomp: ∀ (a : A) (l : L), σ ((ρ l) a)  =  ((ρ' (toLinearMap l)) (σ a))
-
-@[inherit_doc]
-notation:25 ρ " →ₗ⁅" σ:25 "⁆ " ρ':0 => LieRinehart.Hom σ ρ ρ'
-
 
 
 variable {R : Type} [CommRing R]
@@ -62,28 +58,30 @@ variable {R : Type} [CommRing R]
 variable {A : Type} [CommRing A] [Algebra R A]
 variable {L : Type} [LieRing L] [Module A L] [LieAlgebra R L]
 [IsScalarTower R A L]
-variable (ρ : L →ₗ[A] Derivation R A A) [LieRinehartAlgebra ρ]
+variable (ρ : L →ₗ[A] Derivation R A A) [LieRinehartAlgebra R A L ρ]
 
 
 variable {A' : Type} [CommRing A'] [Algebra R A']
 variable {L' : Type} [LieRing L'] [Module A' L'] [LieAlgebra R L']
 [IsScalarTower R A' L']
-variable (ρ' : L' →ₗ[A'] Derivation R A' A') [LieRinehartAlgebra ρ']
+variable (ρ' : L' →ₗ[A'] Derivation R A' A') [LieRinehartAlgebra R A' L' ρ']
 
 variable {A'' : Type} [CommRing A''] [Algebra R A'']
 variable {L'' : Type} [LieRing L''] [Module A'' L''] [LieAlgebra R L'']
 [IsScalarTower R A'' L'']
-variable (ρ'' : L'' →ₗ[A''] Derivation R A'' A'') [LieRinehartAlgebra ρ'']
+variable (ρ'' : L'' →ₗ[A''] Derivation R A'' A'') [LieRinehartAlgebra R A'' L'' ρ'']
 
 variable (σ : A →ₐ[R] A')
 variable (σ' : A' →ₐ[R] A'')
 
-variable (f : ρ →ₗ⁅σ⁆ ρ')
-variable (g : ρ' →ₗ⁅σ'⁆ ρ'')
+variable (f : LieRinehart.Hom σ L ρ L' ρ')
+variable (g : LieRinehart.Hom σ' L' ρ' L'' ρ'')
+
 
 /-- `Der_R(A,A)` itself is a Lie-Rinehart algebra with `ρ=id`
 -/
-instance : LieRinehartAlgebra (LinearMap.id :(Derivation R A A)→ₗ[A] (Derivation R A A)) where
+instance : LieRinehartAlgebra R A (Derivation R A A) (LinearMap.id :(Derivation R A A)→ₗ[A]
+(Derivation R A A)) where
 map_lie':= by simp
 leibniz:= by
   intros x y a
@@ -97,7 +95,7 @@ namespace Hom
 
 /-- Recovers the Lie algebra morphism underlying a Lie-Rinehart algbera homomorophism
 -/
-def toLieHom (f : ρ →ₗ⁅σ⁆ ρ') : L →ₗ⁅R⁆ L' := {
+def toLieHom (f : LieRinehart.Hom σ L ρ L' ρ') : L →ₗ⁅R⁆ L' := {
   f.RestrictScalarsAlgtoRing with
   map_lie' := by
     apply f.map_lie'
@@ -108,7 +106,7 @@ end Hom
 
 /-- The identity morphism of a Lie Rinehart algebra
 -/
-def id : LieRinehart.Hom (AlgHom.id R A) ρ ρ :=
+def id : LieRinehart.Hom (AlgHom.id R A) L ρ L ρ :=
 {
   (LinearMap.id : L→ₗ[A] L) with
   map_lie':= by simp
@@ -121,11 +119,13 @@ def id : LieRinehart.Hom (AlgHom.id R A) ρ ρ :=
 are the same function
 -/
 @[simp]
-theorem ModHomeqLieHom (f : ρ →ₗ⁅σ⁆ ρ') (x : L): f.toLinearMap  x= (f.toLieHom) x:= by rfl
+theorem ModHomeqLieHom (f : LieRinehart.Hom σ L ρ L' ρ') (x : L) : f.toLinearMap  x= (f.toLieHom) x
+:= by rfl
 
 /-- The composition of Lie Rinehart algebra homomorphisms is again a homomorphism
 -/
-def comp (f : ρ →ₗ⁅σ⁆ ρ') (g : ρ' →ₗ⁅σ'⁆ ρ'') : ρ →ₗ⁅AlgHom.comp σ' σ⁆ ρ'' :=
+def comp (f : LieRinehart.Hom σ L ρ L' ρ') (g : LieRinehart.Hom σ' L' ρ' L'' ρ'') :
+LieRinehart.Hom (AlgHom.comp σ' σ)  L ρ L'' ρ'' :=
   { g.toLinearMap.comp f.toLinearMap with
     map_lie' := by
       intros x y

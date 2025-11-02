@@ -16,6 +16,25 @@ instance instCompTriple (σ : A →ₐ[R] A') (σ' : A' →ₐ[R] A'') :
   RingHomCompTriple σ.toRingHom σ'.toRingHom (σ'.comp σ).toRingHom := ⟨rfl⟩
 
 
+/-- Given an algebra morphism`A →ₐ[R] A'` this creates an alias for `A'` seen as an `A`-module.
+The realization of this alias as an A-module is realized by the below instances
+-/
+def AlgHom.inducedMod (_ : A →ₐ[R] A') : Type := A'
+
+instance (σ : A →ₐ[R] A') : AddCommMonoid (σ.inducedMod) :=
+by simpa [AlgHom.inducedMod] using (inferInstance : AddCommMonoid A')
+
+instance (σ : A →ₐ[R] A') : Semiring (σ.inducedMod) :=
+by simpa [AlgHom.inducedMod] using (inferInstance : Semiring A')
+
+instance (σ : A →ₐ[R] A') : Module R (σ.inducedMod) :=
+by simpa [AlgHom.inducedMod] using (inferInstance : Module R A')
+
+instance (σ : A →ₐ[R] A') : Module A (σ.inducedMod) :=
+by simpa [AlgHom.inducedMod] using σ.toAlgebra.toModule
+
+
+
 
 variable {L : Type} [AddCommMonoid L] [Module R L] [Module A L] [IsScalarTower R A L]
 variable {L' : Type} [AddCommMonoid L'] [Module R L'] [Module A' L'] [IsScalarTower R A' L']
