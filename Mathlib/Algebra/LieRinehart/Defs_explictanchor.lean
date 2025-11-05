@@ -44,8 +44,8 @@ and an `A`-linear map `F: L→L'` which is also a Lie algebra homomorphism and i
 with the anchors.
 -/
 structure Hom {R A A' : Type*} [CommRing R] [CommRing A] [Algebra R A] [CommRing A']
-[Algebra R A'] (σ : A →ₐ[R] A') (L : Type) [LieRing L] [Module A L]
-[LieAlgebra R L] [IsScalarTower R A L] (ρ : L →ₗ[A] Derivation R A A) (L' : Type)
+[Algebra R A'] (σ : A →ₐ[R] A') (L : Type*) [LieRing L] [Module A L]
+[LieAlgebra R L] [IsScalarTower R A L] (ρ : L →ₗ[A] Derivation R A A) (L' : Type*)
 [LieRing L'] [Module A' L'] [LieAlgebra R L'] [IsScalarTower R A' L']
 (ρ' : L' →ₗ[A'] Derivation R A' A')
 [LieRinehartAlgebra R A L ρ] [LieRinehartAlgebra R A' L' ρ'] extends L →ₛₗ[σ.toRingHom] L' where
@@ -53,21 +53,21 @@ map_lie' : ∀ (x y : L), toLinearMap ⁅x,y⁆ = ⁅ toLinearMap x, toLinearMap
 anchorcomp: ∀ (a : A) (l : L), σ ((ρ l) a)  =  ((ρ' (toLinearMap l)) (σ a))
 
 
-variable {R : Type} [CommRing R]
+variable {R : Type*} [CommRing R]
 
-variable {A : Type} [CommRing A] [Algebra R A]
-variable {L : Type} [LieRing L] [Module A L] [LieAlgebra R L]
+variable {A : Type*} [CommRing A] [Algebra R A]
+variable {L : Type*} [LieRing L] [Module A L] [LieAlgebra R L]
 [IsScalarTower R A L]
 variable (ρ : L →ₗ[A] Derivation R A A) [LieRinehartAlgebra R A L ρ]
 
 
-variable {A' : Type} [CommRing A'] [Algebra R A']
-variable {L' : Type} [LieRing L'] [Module A' L'] [LieAlgebra R L']
+variable {A' : Type*} [CommRing A'] [Algebra R A']
+variable {L' : Type*} [LieRing L'] [Module A' L'] [LieAlgebra R L']
 [IsScalarTower R A' L']
 variable (ρ' : L' →ₗ[A'] Derivation R A' A') [LieRinehartAlgebra R A' L' ρ']
 
-variable {A'' : Type} [CommRing A''] [Algebra R A'']
-variable {L'' : Type} [LieRing L''] [Module A'' L''] [LieAlgebra R L'']
+variable {A'' : Type*} [CommRing A''] [Algebra R A'']
+variable {L'' : Type*} [LieRing L''] [Module A'' L''] [LieAlgebra R L'']
 [IsScalarTower R A'' L'']
 variable (ρ'' : L'' →ₗ[A''] Derivation R A'' A'') [LieRinehartAlgebra R A'' L'' ρ'']
 
