@@ -21,7 +21,6 @@ variable {L A M : Type*} [Bracket L M] [Bracket L A] [SMul A M] [SMul A L] [Left
 
 @[simp]
 lemma lem_linearity (a : A) (x : L) (m : M) :  ⁅a•x, m⁆ = a•⁅x, m⁆ := by apply linearity a x m
-
 end LeftLinBracket
 
 
@@ -88,15 +87,35 @@ end instDerivationLieRinehartAlgebra
 
 namespace LieRinehartAlgebra
 
+
+variable {R : Type*} [CommRing R]
+
+variable {A L : Type*} [CommRing A] [Algebra R A]
+[LieRing L] [Module A L] [LieAlgebra R L] [IsScalarTower R A L] [LieRingModule L A]
+[LieModule R L A] [LeibnizAction L A A] [LeibnizAction L A L]
+[LeftLinBracket L A A] [LieRinehartAlgebra R A L]
+
+variable {A' L' : Type*} [CommRing A'] [Algebra R A']
+[LieRing L'] [Module A' L'] [LieAlgebra R L'] [IsScalarTower R A' L'] [LieRingModule L' A']
+[LieModule R L' A'] [LeibnizAction L' A' A'] [LeibnizAction L' A' L']
+[LeftLinBracket L' A' A'] [LieRinehartAlgebra R A' L']
+
+variable {A'' L'' : Type*} [CommRing A''] [Algebra R A'']
+[LieRing L''] [Module A'' L''] [LieAlgebra R L''] [IsScalarTower R A'' L''] [LieRingModule L'' A'']
+[LieModule R L'' A''] [LeibnizAction L'' A'' A''] [LeibnizAction L'' A'' L'']
+[LeftLinBracket L'' A'' A''] [LieRinehartAlgebra R A'' L'']
+
+variable (σ : A →ₐ[R] A')
+variable (σ' : A' →ₐ[R] A'')
+
 /-- A homomorphism of Lie-Rinehart algebras `(A,L)`, `(A',L')` consists of an algebra map `σ:A→ A'`
 and an `A`-linear map `F: L→L'` which is also a Lie algebra homomorphism and is compatible
 with the anchors.
 -/
-structure Hom {R A A' : Type*} [CommRing R] [CommRing A] [Algebra R A] [CommRing A'] [Algebra R A']
-(σ : A →ₐ[R] A') (L L' : Type*) [LieRing L] [Module A L] [LieAlgebra R L] [IsScalarTower R A L]
-[LieRingModule L A] [LieModule R L A] [LeibnizAction L A A] [LeibnizAction L A L]
-[LeftLinBracket L A A] [LieRinehartAlgebra R A L] [LieRing L'] [Module A' L'] [LieAlgebra R L']
-[IsScalarTower R A' L'] [LieRingModule L' A'] [LieModule R L' A']
+structure Hom (σ : A →ₐ[R] A') (L L' : Type*) [LieRing L] [Module A L] [LieAlgebra R L]
+[IsScalarTower R A L] [LieRingModule L A] [LieModule R L A] [LeibnizAction L A A]
+[LeibnizAction L A L] [LeftLinBracket L A A] [LieRinehartAlgebra R A L] [LieRing L']
+[Module A' L'] [LieAlgebra R L'] [IsScalarTower R A' L'] [LieRingModule L' A'] [LieModule R L' A']
 [LeibnizAction L' A' A'] [LeibnizAction L' A' L'] [LeftLinBracket L' A' A']
 [LieRinehartAlgebra R A' L']
 extends LinearMap (R := A) (S := A') σ.toRingHom L L' where
@@ -106,26 +125,6 @@ anchorcomp: ∀ (a : A) (l : L), σ (⁅l, a⁆)  =  ⁅(toLinearMap l), (σ a)�
 @[inherit_doc]
 notation:25 L " →ₗ⁅" σ:25 "⁆ " L':0 => LieRinehartAlgebra.Hom σ L L'
 
-
-variable {R A L : Type*} [CommRing R] [CommRing A] [Algebra R A]
-[LieRing L] [Module A L] [LieAlgebra R L] [IsScalarTower R A L] [LieRingModule L A]
-[LieModule R L A] [LeibnizAction L A A] [LeibnizAction L A L] [LeftLinBracket L A A]
-[LieRinehartAlgebra R A L]
-
-variable {A' L' : Type*} [CommRing A'] [Algebra R A']
-[LieRing L'] [Module A' L'] [LieAlgebra R L'] [IsScalarTower R A' L'] [LieRingModule L' A']
-[LieModule R L' A'] [LeibnizAction L' A' A'] [LeibnizAction L' A' L']
-[LeftLinBracket L' A' A']
-[LieRinehartAlgebra R A' L']
-
-variable {A'' L'' : Type*} [CommRing A''] [Algebra R A'']
-[LieRing L''] [Module A'' L''] [LieAlgebra R L''] [IsScalarTower R A'' L''] [LieRingModule L'' A'']
-[LieModule R L'' A''] [LeibnizAction L'' A'' A''] [LeibnizAction L'' A'' L'']
-[LeftLinBracket L'' A'' A'']
-[LieRinehartAlgebra R A'' L'']
-
-variable (σ : A →ₐ[R] A')
-variable (σ' : A' →ₐ[R] A'')
 
 --TODO: IS This something we want?
 instance : CoeFun (L →ₗ⁅σ⁆ L') (fun _ => L → L') := ⟨fun f => f.toLinearMap⟩
@@ -217,5 +216,6 @@ def ρ (L : Type*) [LieRing L] [Module A L] [LieAlgebra R L] [IsScalarTower R A 
   anchorcomp := by simp
 }
 
+--Todo: somehow L.ρ does not work as a notation
 
 end LieRinehartAlgebra
