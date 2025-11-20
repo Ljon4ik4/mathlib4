@@ -18,7 +18,6 @@ end CompTriple
 
 
 
-section inducedAlgMod
 variable {R : Type*} [CommRing R]
 variable {A : Type*} [CommRing A] [Algebra R A]
 variable {A' : Type*} [CommRing A'] [Algebra R A']
