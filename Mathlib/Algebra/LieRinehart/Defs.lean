@@ -5,13 +5,13 @@ import Mathlib.Algebra.LieRinehart.utils
 class LeibnizAction (L A M : Type*) [Bracket L M] [Bracket L A] [AddCommGroup M] [SMul A M]
 where leibniz : ∀ (x : L) (a : A) (m : M),  ⁅x, a•m⁆ = a•⁅x, m⁆ + ⁅x, a⁆•m
 
-namespace LeibnizAction
 variable {L A M : Type*} [Bracket L M] [Bracket L A] [AddCommGroup M] [SMul A M]
 [LeibnizAction L A M]
 
 @[simp]
-lemma lem_leibniz (x : L) (a : A) (m : M) : ⁅x, a•m⁆ = a•⁅x, m⁆ + ⁅x, a⁆•m := by apply leibniz x a m
-end LeibnizAction
+lemma  LeibnizAction.lem_leibniz (x : L) (a : A) (m : M) :
+⁅x, a•m⁆ = a•⁅x, m⁆ + ⁅x, a⁆•m := by apply leibniz x a m
+
 
 
 

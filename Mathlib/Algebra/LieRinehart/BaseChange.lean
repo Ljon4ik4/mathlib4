@@ -1,4 +1,4 @@
-import Mathlib.Algebra.LieRinehart.Defs_implicitanchor
+import Mathlib.Algebra.LieRinehart.Defs
 import Mathlib.LinearAlgebra.TensorProduct.Basic
 import Mathlib.LinearAlgebra.Prod
 
