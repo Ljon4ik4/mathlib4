@@ -1,6 +1,6 @@
 import Mathlib.Algebra.LieRinehart.Defs_implicitanchor
 import Mathlib.LinearAlgebra.TensorProduct.Basic
-
+import Mathlib.LinearAlgebra.Prod
 
 
 
@@ -60,7 +60,7 @@ variable {σ : A →ₐ[R] A'}
 
 variable {L : Type} [LieRing L] [Module A L] [LieAlgebra R L] [IsScalarTower R A L]
 [LieRingModule L A] [LieModule R L A] [LeibnizAction L A A] [LeibnizAction L A L]
-[LeftLinBracket L A A] [LieRinehartAlgebra R A L]
+[LieRinehartAlgebra R A L]
 
 
 instance : Module A'  (TensorProduct A σ.inducedAlgMod L) := by
@@ -85,9 +85,12 @@ def anchor_eval_pointwise (a : σ.inducedAlgMod) : L →ₗ[A] (Derivation R A �
     ext c
     simp only [Derivation.coe_smul, Derivation.coe_comp, LinearMap.coe_comp,
       LinearMap.coe_restrictScalars, Derivation.coeFn_coe, Pi.smul_apply, Function.comp_apply,
-      LieRinehartAlgebra.lem_derivof, LeftLinBracket.lem_linearity, smul_eq_mul,
-      lem_toFullyLinearMap, map_mul, RingHom.id_apply, mul_is_just_action]
-    exact mul_left_comm a (σ b) (σ ⁅x, c⁆)
+      LieRinehartAlgebra.lem_derivof, lem_toFullyLinearMap, smul_eq_mul, RingHom.id_apply,
+      mul_is_just_action]
+    rw [LieRinehartAlgebra.left_linearity R]
+    unfold AlgHom.inducedlinearEquiv
+    simp only [map_mul, LinearEquiv.coe_symm_mk', id_eq]
+    ring
 }
 
 
@@ -115,7 +118,6 @@ def anchor_eval : σ.inducedAlgMod →ₗ[A] L →ₗ[A] (Derivation R A σ.indu
 }
 
 
---#check TensorProduct.lift (anchor_eval (σ:=σ))
 
 def otherrelevantmorphforpullback (σ : A →ₐ[R] A') :
 (TensorProduct A σ.inducedAlgMod L) →ₗ[A] Derivation R A σ.inducedAlgMod :=
@@ -152,11 +154,14 @@ def improvedotherrelevantmorphforpullback (σ : A →ₐ[R] A') :
 }
 
 
-def prod : (Bool → Type _)
-| false => (Derivation R σ.inducedAlgMod σ.inducedAlgMod)
-| true  => (TensorProduct A σ.inducedAlgMod L)
+#synth Module σ.inducedAlgMod
+((Derivation R σ.inducedAlgMod σ.inducedAlgMod) × (TensorProduct A σ.inducedAlgMod L))
 
+--#check improvedotherrelevantmorphforpullback σ
 
+--def K : (Derivation R σ.inducedAlgMod σ.inducedAlgMod)
+-- × (TensorProduct A σ.inducedAlgMod L)→ₗ[σ.inducedAlgMod] Derivation R A σ.inducedAlgMod  := LinearMap.coprod (R:=A')
+-- (improvedotherrelevantmorphforpullback (L:=L) σ) σ.derivation_pullback
 
 
 --plan:
