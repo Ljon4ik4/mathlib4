@@ -4,46 +4,31 @@ import Mathlib.Algebra.Algebra.Tower
 
 
 
-section CompTriple
-/--
-helper so lean recognizes that the composition of semilinear maps over algebras is semilinear
-in LieRinehart.Hom.comp
--/
-instance instCompTriple {R A A' A'' : Type*} [CommRing R] [CommRing A] [Algebra R A]
-[CommRing A'] [Algebra R A'] [CommRing A''] [Algebra R A'']
-(σ : A →ₐ[R] A') (σ' : A' →ₐ[R] A'') :
-RingHomCompTriple σ.toRingHom σ'.toRingHom (σ'.comp σ).toRingHom := ⟨rfl⟩
-end CompTriple
-
-
-
-section RestrictScalarsAlgtoRing
+section restrictScalars_sl
 variable {R : Type*} [CommRing R]
-variable {A : Type*} [CommRing A] [Algebra R A]
-variable {A' : Type*} [CommRing A'] [Algebra R A']
-variable {L : Type*} [AddCommMonoid L] [Module R L] [Module A L] [IsScalarTower R A L]
-variable {L' : Type*} [AddCommMonoid L'] [Module R L'] [Module A' L'] [IsScalarTower R A' L']
+variable {A : Type*} [Ring A] [Algebra R A]
+variable {A' : Type*} [Ring A'] [Algebra R A']
+variable {M : Type*} [AddCommMonoid M] [Module R M] [Module A M] [IsScalarTower R A M]
+variable {M₂ : Type*} [AddCommMonoid M₂] [Module R M₂] [Module A' M₂] [IsScalarTower R A' M₂]
 variable {σ : A →ₐ[R] A'}
 
-/-- Interpreting a `σ:A→ₐ[R]A'` semilinear map as an `R`-linear map.
--/
-def LinearMap.RestrictScalarsAlgtoRing (f : L →ₛₗ[σ.toRingHom] L') :
-( L →ₗ[R] L') :=
-  {
-    f.toAddMonoidHom with
-    map_smul' := by
-      intros r x
-      simp
-      simp only [←(IsScalarTower.algebraMap_smul (R:=R) (A:=A) (M:=L) r x)]
-      calc f ((algebraMap R A) r • x)
-        = σ.toRingHom ((algebraMap R A) r) • f (x) :=
-          by rw [f.map_smulₛₗ (R:= A) (c := (algebraMap R A) r) (M:=L) (x:=x)]
-        _ = r • f (x) := by simp
-  }
+def LinearMap.restrictScalars_semilin (f : M →ₛₗ[σ.toRingHom] M₂) : (M →ₗ[R] M₂) := {
+  f with
+  map_smul':= by
+    intros r m
+    simp only [AlgHom.toRingHom_eq_coe, AddHom.toFun_eq_coe, coe_toAddHom, RingHom.id_apply]
+    rw [←(IsScalarTower.algebraMap_smul A r m)]
+    rw [f.map_smulₛₗ]
+    simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, AlgHom.commutes, algebraMap_smul]
+}
 
 @[simp]
-lemma lem_RestrictedScalarhom (f : L →ₛₗ[σ.toRingHom] L') (x : L) :
-f  x= (f.RestrictScalarsAlgtoRing) x
+lemma restrictScalars_semilin.lem_RestrictedScalarhom (f : M →ₛₗ[σ.toRingHom] M₂) (x : M) :
+f  x= (f.restrictScalars_semilin) x
 := by rfl
 
-end RestrictScalarsAlgtoRing
+--variable {M₃ : Type*} [AddCommMonoid M₃] [Module R M₃] [Module A M₃] [IsScalarTower R A M₃]
+--lemma restrict_scalars_semi_is_restrict_scalars ( f : M →ₗ[A] M₃ ):
+--f.restrictScalars R = f.restrictScalars_semilin := rfl
+
+end restrictScalars_sl

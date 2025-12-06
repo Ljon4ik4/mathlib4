@@ -8,21 +8,11 @@ variable {R : Type*} [CommRing R]
 variable {A : Type*} [CommRing A] [Algebra R A]
 variable {A' : Type*} [CommRing A'] [Algebra R A'] [Algebra A A'] [IsScalarTower R A A']
 variable {L : Type*} [LieRing L] [Module A L] [LieAlgebra R L] [IsScalarTower R A L]
-[LieRingModule L A] [LieModule R L A] [LeibnizAction L A A] [LeibnizAction L A L]
-[LieRinehartAlgebra R A L]
+[LieRingModule L A] [LieModule R L A] [LieRinehartAlgebra R A L]
 
 
 
 def σ := Algebra.ofId A A'
-
-variable (R A A') in
-@[simps!]
-def derivation_pullback : Derivation R A' A' →ₗ[A'] Derivation R A A' :=
-{
-  toFun :=  Derivation.compAlgebraMap A
-  map_add' := by exact fun x y ↦ rfl
-  map_smul' := by exact fun m x ↦ rfl
-}
 
 
 open TensorProduct
@@ -32,11 +22,11 @@ variable (R A A' L) in
 @[simps!]
 def anchor_and_mult : A'→ₗ[A] L →ₗ[A] (Derivation R A A') :=
 {
-  toFun := fun a ↦a • (σ.toLinearMap.compDer ∘ₗ (LieRinehartAlgebra.ρ A L).toLinearMap)
+  toFun := fun a ↦a • (σ.toLinearMap.compDer ∘ₗ (LieRinehartAlgebra.ρ R A L).toLinearMap)
   map_add' := by exact fun x y↦
-    Module.add_smul x y (σ.toLinearMap.compDer ∘ₗ (LieRinehartAlgebra.ρ A L).toLinearMap)
+    Module.add_smul x y (σ.toLinearMap.compDer ∘ₗ (LieRinehartAlgebra.ρ R A L).toLinearMap)
   map_smul' := by exact fun m x ↦
-    IsScalarTower.smul_assoc m x (σ.toLinearMap.compDer ∘ₗ (LieRinehartAlgebra.ρ A L).toLinearMap)
+    IsScalarTower.smul_assoc m x (σ.toLinearMap.compDer ∘ₗ (LieRinehartAlgebra.ρ R A L).toLinearMap)
 }
 
 variable (R A A' L) in
@@ -59,8 +49,7 @@ def induced_rel_derivation :  (A'⊗[A] L) →ₗ[A'] (Derivation R A A') :=
         LinearMap.coe_restrictScalars, AlgHom.coe_toLinearMap, Derivation.coeFn_coe, Pi.smul_apply,
         smul_eq_mul]
       unfold LieRinehartAlgebra.ρ
-      simp only [AlgHom.toRingHom_eq_coe, AlgHom.id_toRingHom, LinearMap.coe_mk, AddHom.coe_mk,
-        LieRinehartAlgebra.lem_derivof]
+      simp only [AlgHom.toRingHom_eq_coe, AlgHom.id_toRingHom, LinearMap.coe_mk, AddHom.coe_mk]
       exact mul_assoc a x (σ ⁅y, b⁆)
     | add x y h1 h2 =>
       simp only [smul_add, map_add]
@@ -70,7 +59,7 @@ def induced_rel_derivation :  (A'⊗[A] L) →ₗ[A'] (Derivation R A A') :=
 
 variable (R A A' L) in
 abbrev LRPullback := LinearMap.ker
-(LinearMap.coprod (induced_rel_derivation R A A' L) (derivation_pullback R A A'))
+(LinearMap.coprod (induced_rel_derivation R A A' L) (Derivation.compAlgebraMapL R A A' A'))
 
 end relative_derivations
 
