@@ -1,6 +1,29 @@
+/-
+Copyright (c) 2025 Leonid Ryvkin. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Leonid Ryvkin
+-/
+
+
 import Mathlib.RingTheory.Derivation.Lie
 import Mathlib.Algebra.LieRinehart.utils
 
+
+/-!
+# Lie Rinehart algebras
+This file defines Lie-Rinehart algebras and their morphisms.
+Lie Rinehart algebras appear in differential geometry as section spaces of Lie algebroids and
+singular foliations. They typical Cartan calculus of differential geometry can be restated fully in
+terms of the Chevalley-Eilenberg algebra of a Lie-Rinehart algebra.
+
+## References
+
+*
+
+## Tags
+
+Lie-Rinehart algebra
+-/
 
 class LeibnizAction (L A M : Type*) [Bracket L M] [Bracket L A] [AddCommGroup M] [SMul A M]
 where leibniz : ∀ (x : L) (a : A) (m : M),  ⁅x, a•m⁆ = a•⁅x, m⁆ + ⁅x, a⁆•m
@@ -9,7 +32,7 @@ variable {L A M : Type*} [Bracket L M] [Bracket L A] [AddCommGroup M] [SMul A M]
 [LeibnizAction L A M]
 
 @[simp]
-lemma  LeibnizAction.lem_leibniz (x : L) (a : A) (m : M) :
+lemma LeibnizAction.lem_leibniz (x : L) (a : A) (m : M) :
 ⁅x, a•m⁆ = a•⁅x, m⁆ + ⁅x, a⁆•m := by apply leibniz x a m
 
 
@@ -187,10 +210,11 @@ lemma lem_derivof {R A L : Type*} [CommRing R] [CommRing A] [Algebra R A]
 [LieModule R L A] [LeibnizAction L A A] [LeibnizAction L A L] [LieRinehartAlgebra R A L]
 (x : L) (a : A) : (derivOf (R:=R) x) a = ⁅ x, a ⁆ := by rfl
 
+variable (A L) in
 /-- The anchor of a given LieRinehart algebra `L` over `A` interpreted as a LieRinehart morphism to
 the module of derivations of `A`.
 -/
-def ρ (L : Type*) [LieRing L] [Module A L] [LieAlgebra R L] [IsScalarTower R A L]
+def ρ [LieRing L] [Module A L] [LieAlgebra R L] [IsScalarTower R A L]
 [LieRingModule L A] [LieModule R L A] [LeibnizAction L A A] [LeibnizAction L A L]
  [LieRinehartAlgebra R A L] : L →ₗ⁅AlgHom.id R A⁆ (Derivation R A A) := {
   toFun := derivOf
@@ -204,7 +228,6 @@ def ρ (L : Type*) [LieRing L] [Module A L] [LieAlgebra R L] [IsScalarTower R A 
     simp only [lem_derivof, AlgHom.toRingHom_eq_coe, AlgHom.id_toRingHom, RingHom.id_apply,
       Derivation.coe_smul, Pi.smul_apply, smul_eq_mul]
     apply lem_left_linearity (R:=R)
-
   map_lie' := by
     intros x y
     ext a
