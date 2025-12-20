@@ -6,8 +6,6 @@ Authors: Leonid Ryvkin
 
 
 import Mathlib.RingTheory.Derivation.Lie
-import Mathlib.Algebra.LieRinehart.utils
-
 
 /-!
 # Lie Rinehart algebras
@@ -136,9 +134,17 @@ by exact f.anchorcomp a l
 /-- Recovers the Lie algebra morphism underlying a Lie-Rinehart algbera homomorophism
 -/
 def Hom.toLieHom (f : L →ₗ⁅σ⁆ L') : L →ₗ⁅R⁆ L' := {
-  toLinearMap := f.restrictScalars_semilin,
+  toFun := f.toFun
+  map_add' := f.map_add'
+  map_smul' := by
+    intros r l
+    simp only [AlgHom.toRingHom_eq_coe, AddHom.toFun_eq_coe, LinearMap.coe_toAddHom,
+      RingHom.id_apply]
+    rw [←(IsScalarTower.algebraMap_smul A r l)]
+    rw [f.map_smulₛₗ]
+    simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, AlgHom.commutes, algebraMap_smul]
   map_lie' := by apply f.map_lie'
-  }
+}
 
 /-- The module homomorphism and the Lie algebra homomorphism undelying a Lie Rinehart homomorphism
 are the same function
