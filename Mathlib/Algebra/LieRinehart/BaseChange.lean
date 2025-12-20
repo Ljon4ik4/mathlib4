@@ -22,11 +22,12 @@ variable (R A A' L) in
 @[simps!]
 def anchor_and_mult : A'→ₗ[A] L →ₗ[A] (Derivation R A A') :=
 {
-  toFun := fun a ↦a • (σ.toLinearMap.compDer ∘ₗ (LieRinehartAlgebra.ρ R A L).toLinearMap)
+  toFun := fun a ↦a • (σ.toLinearMap.compDer ∘ₗ (LieRinehartAlgebra.anchor R A L).toLinearMap)
   map_add' := by exact fun x y↦
-    Module.add_smul x y (σ.toLinearMap.compDer ∘ₗ (LieRinehartAlgebra.ρ R A L).toLinearMap)
+    Module.add_smul x y (σ.toLinearMap.compDer ∘ₗ (LieRinehartAlgebra.anchor R A L).toLinearMap)
   map_smul' := by exact fun m x ↦
-    IsScalarTower.smul_assoc m x (σ.toLinearMap.compDer ∘ₗ (LieRinehartAlgebra.ρ R A L).toLinearMap)
+    IsScalarTower.smul_assoc m x (σ.toLinearMap.compDer ∘ₗ
+    (LieRinehartAlgebra.anchor R A L).toLinearMap)
 }
 
 variable (R A A' L) in
@@ -48,7 +49,7 @@ def induced_rel_derivation :  (A'⊗[A] L) →ₗ[A'] (Derivation R A A') :=
         Function.comp_apply, Derivation.coe_smul, Derivation.coe_comp,
         LinearMap.coe_restrictScalars, AlgHom.coe_toLinearMap, Derivation.coeFn_coe, Pi.smul_apply,
         smul_eq_mul]
-      unfold LieRinehartAlgebra.ρ
+      unfold LieRinehartAlgebra.anchor
       simp only [AlgHom.toRingHom_eq_coe, AlgHom.id_toRingHom, LinearMap.coe_mk, AddHom.coe_mk]
       exact mul_assoc a x (σ ⁅y, b⁆)
     | add x y h1 h2 =>
@@ -94,9 +95,5 @@ theorem pushtensorsurj : Surjective (pushtensor R A M N) := by
   use  t.sum fun i ↦ i.1 ⊗ₜ[R] i.2
   simp only [map_sum, lift.tmul]
   exact id (Eq.symm ht)
-
-
-
-
 
 end tensorsurjection

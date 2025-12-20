@@ -59,9 +59,7 @@ leibniz_lie:=by exact fun x y m ↦ Eq.symm (add_eq_of_eq_sub rfl)
 
 instance : LieModule R (Derivation R A A) A where
 smul_lie := by exact fun t x m ↦ rfl
-lie_smul := by
-  intros r X a
-  exact X.map_smul_of_tower r a
+lie_smul := by intros r X a; exact X.map_smul_of_tower r a
 
 @[simp]
 lemma bracketmul (X : Derivation R A A) (a : A) : ⁅ X ,a ⁆ = X (a) := by rfl
@@ -139,16 +137,14 @@ by exact f.anchorcomp a l
 -/
 def Hom.toLieHom (f : L →ₗ⁅σ⁆ L') : L →ₗ⁅R⁆ L' := {
   toLinearMap := f.restrictScalars_semilin,
-  map_lie' := by
-    apply f.map_lie'
+  map_lie' := by apply f.map_lie'
   }
 
 /-- The module homomorphism and the Lie algebra homomorphism undelying a Lie Rinehart homomorphism
 are the same function
 -/
 @[simp]
-theorem ModHomeqLieHom (f : L →ₗ⁅σ⁆ L') (x : L) : f.toLinearMap  x= (f.toLieHom) x
-:= by rfl
+theorem ModHomeqLieHom (f : L →ₗ⁅σ⁆ L') (x : L) : f.toLinearMap  x= (f.toLieHom) x := by rfl
 
 
 /-- The composition of Lie Rinehart algebra homomorphisms is again a homomorphism
@@ -160,13 +156,10 @@ def comp (f : L →ₗ⁅σ⁆ L') (g : L' →ₗ⁅σ'⁆ L'') : L →ₗ⁅(Al
       exact g.toLinearMap.comp f.toLinearMap
     map_lie' := by
       intros x y
-      dsimp
+      dsimp only [AlgHom.toRingHom_eq_coe, LinearMap.coe_comp, Function.comp_apply]
       repeat rw [ModHomeqLieHom]
       simp only [LieHom.map_lie]
-    anchorcomp := by
-      intros l a
-      dsimp
-      repeat rw [←lem_anchorcomp]
+    anchorcomp := by intros l a; dsimp; repeat rw [←lem_anchorcomp]
     }
 
 
@@ -174,23 +167,22 @@ variable (R) in
 /-- The way to see an element of `L` as a derivation of `A`.
 Later this will become simply `ρ(a)`
 -/
-abbrev derivOf (x : L) : Derivation R A A :=
-Derivation.mk'
-  ((LieModule.toEnd R L A) x)
+abbrev derivOf (x : L) : Derivation R A A := Derivation.mk' ((LieModule.toEnd R L A) x)
   (by
-    intros a b
+    intros a b;
     dsimp only [LieModule.toEnd_apply_apply, smul_eq_mul]
     repeat rw [←smul_eq_mul]
-    rw [LieRinehartAlgebra.leibnizA (R:=R) x a b]
+    rw [LieRinehartAlgebra.leibnizA R x a b]
     simp only [smul_eq_mul, add_right_inj]
-    exact CommMonoid.mul_comm ⁅x, a⁆ b)
+    exact CommMonoid.mul_comm ⁅x, a⁆ b
+  )
 
 
 variable (R A L) in
 /-- The anchor of a given LieRinehart algebra `L` over `A` interpreted as a LieRinehart morphism to
 the module of derivations of `A`.
 -/
-def ρ [LieRing L] [Module A L] [LieAlgebra R L] [IsScalarTower R A L]
+def anchor [LieRing L] [Module A L] [LieAlgebra R L] [IsScalarTower R A L]
 [LieRingModule L A] [LieModule R L A] [LieRinehartAlgebra R A L] : L →ₗ⁅AlgHom.id R A⁆
 (Derivation R A A) := {
   toFun := derivOf R
@@ -212,11 +204,9 @@ def ρ [LieRing L] [Module A L] [LieAlgebra R L] [IsScalarTower R A L]
       Derivation.coe_mk', LieHom.map_lie, LieHom.lie_apply, LieModule.toEnd_apply_apply,
       Module.End.lie_apply]
     rw [Derivation.commutator_apply]
-    dsimp
+    dsimp only [Derivation.coe_mk', LieModule.toEnd_apply_apply]
   anchorcomp := by simp only [AlgHom.coe_id, id_eq, AlgHom.toRingHom_eq_coe, AlgHom.id_toRingHom,
     LinearMap.coe_mk, AddHom.coe_mk, bracketmul, Derivation.coe_mk', LieModule.toEnd_apply_apply,
     implies_true]
 }
-
---Todo: somehow L.ρ does not work as a notation
 end LieRinehartAlgebra
