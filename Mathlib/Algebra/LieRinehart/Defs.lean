@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2025 Leonid Ryvkin. All rights reserved.
+Copyright (c) 2025 Sven Holtrop and Leonid Ryvkin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Leonid Ryvkin
+Authors: Sven Holtrop, Leonid Ryvkin
 -/
 
 
@@ -11,7 +11,7 @@ import Mathlib.RingTheory.Derivation.Lie
 # Lie Rinehart algebras
 This file defines Lie-Rinehart algebras and their morphisms.
 Lie Rinehart algebras appear in differential geometry as section spaces of Lie algebroids and
-singular foliations. They typical Cartan calculus of differential geometry can be restated fully in
+singular foliations. The typical Cartan calculus of differential geometry can be restated fully in
 terms of the Chevalley-Eilenberg algebra of a Lie-Rinehart algebra.
 
 ## References
@@ -50,22 +50,22 @@ variable {R : Type*} [CommRing R]
 variable {A : Type*} [CommRing A] [Algebra R A]
 
 instance instDerLieRingModule : LieRingModule (Derivation R A A) A where
-bracket:= fun X a ↦X (a)
-add_lie:= by simp only [Derivation.coe_add, Pi.add_apply, implies_true]
-lie_add:= by simp only [map_add, implies_true]
-leibniz_lie:=by exact fun x y m ↦ Eq.symm (add_eq_of_eq_sub rfl)
+bracket := fun X a ↦ X ( a )
+add_lie := by simp only [Derivation.coe_add, Pi.add_apply, implies_true]
+lie_add := by simp only [map_add, implies_true]
+leibniz_lie := by exact fun x y m ↦ Eq.symm (add_eq_of_eq_sub rfl)
 
 instance : LieModule R (Derivation R A A) A where
 smul_lie := by exact fun t x m ↦ rfl
 lie_smul := by intros r X a; exact X.map_smul_of_tower r a
 
 @[simp]
-lemma bracketmul (X : Derivation R A A) (a : A) : ⁅ X ,a ⁆ = X (a) := by rfl
+lemma bracketmul (X : Derivation R A A) (a : A) : ⁅ X ,a ⁆ = X a := by rfl
 
 
 /-- The derivations of an Algebra form a LieRinehartAlgebra themselves
 -/
-instance : (LieRinehartAlgebra R A (Derivation R A A)) :={
+instance : (LieRinehartAlgebra R A (Derivation R A A)) := {
   left_linearity := by exact fun a b x ↦ rfl
   leibnizA := by
     intros X a m
@@ -150,7 +150,7 @@ def Hom.toLieHom (f : L →ₗ⁅σ⁆ L') : L →ₗ⁅R⁆ L' := {
 are the same function
 -/
 @[simp]
-theorem ModHomeqLieHom (f : L →ₗ⁅σ⁆ L') (x : L) : f.toLinearMap  x= (f.toLieHom) x := by rfl
+theorem ModHomeqLieHom (f : L →ₗ⁅σ⁆ L') (x : L) : f.toLinearMap x = (f.toLieHom) x := by rfl
 
 
 /-- The composition of Lie Rinehart algebra homomorphisms is again a homomorphism
