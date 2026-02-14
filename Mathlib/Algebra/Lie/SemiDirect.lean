@@ -35,10 +35,11 @@ The semi-direct sum of two Lie algebras `H` and `G` over `R`, relative to A Lie 
 `ψ: G → Liederivation R H H `. As a set it just `H × G`, however the Lie bracket is twisted by `ψ`.
 -/
 def SemiDirectSum {R : Type*} [CommRing R] (H : Type*) [LieRing H] [LieAlgebra R H]
-(G : Type*) [LieRing G] [LieAlgebra R G] (_ψ : G →ₗ⁅R⁆ (LieDerivation R H H)) := H × G
+    (G : Type*) [LieRing G] [LieAlgebra R G] (_ψ : G →ₗ⁅R⁆ (LieDerivation R H H)) := H × G
 
 @[inherit_doc]
-notation:35 H " ⋊[" φ:35 "] " G:35 => SemiDirectSum H G φ
+notation:35 H " ⋊⁅" ψ:35 "⁆ " G:35 => SemiDirectSum H G ψ
+
 
 namespace SemiDirectSum
 
@@ -48,18 +49,21 @@ variable {H : Type*} [LieRing H] [LieAlgebra R H]
 variable (ψ : G →ₗ⁅R⁆ (LieDerivation R H H))
 
 
-instance : AddCommGroup (SemiDirectSum H G ψ) := by
+instance : AddCommGroup (H ⋊⁅ψ⁆ G) := by
   unfold SemiDirectSum
   infer_instance
 
-instance : Module R (SemiDirectSum H G ψ) := by
+
+instance : Module R (H ⋊⁅ψ⁆ G) := by
   unfold SemiDirectSum
   infer_instance
 
-instance : Bracket (SemiDirectSum H G ψ) (SemiDirectSum H G ψ) where
-  bracket x y := (⁅x.1, y.1⁆ + (ψ x.2) y.1 - (ψ y.2) x.1 , ⁅x.2, y.2⁆)
 
-instance : LieRing (SemiDirectSum H G ψ) where
+instance : Bracket (H ⋊⁅ψ⁆ G) (H ⋊⁅ψ⁆ G) where
+  bracket x y := (⁅x.1, y.1⁆ + (ψ x.2) y.1 - (ψ y.2) x.1, ⁅x.2, y.2⁆)
+
+
+instance : LieRing (H ⋊⁅ψ⁆ G) where
   add_lie _ _ _ := by
     unfold SemiDirectSum
     simp [Bracket.bracket]
@@ -84,7 +88,8 @@ instance : LieRing (SemiDirectSum H G ψ) where
     rw [←lie_skew]
     abel_nf
 
-instance : LieAlgebra R (SemiDirectSum H G ψ) where
+
+instance : LieAlgebra R (H ⋊⁅ψ⁆ G) where
   lie_smul r x y := by
     unfold SemiDirectSum
     simp only [Bracket.bracket, Prod.smul_fst, lie_smul, map_smul, Prod.smul_snd,
@@ -92,7 +97,7 @@ instance : LieAlgebra R (SemiDirectSum H G ψ) where
     rw [← smul_add,← smul_sub]
 
 
-def inclusion : H →ₗ⁅R⁆ (SemiDirectSum H G ψ) where
+def inclusion : H →ₗ⁅R⁆ (H ⋊⁅ψ⁆ G) where
   toLinearMap := LinearMap.inl R H G
   map_lie' := by
     intros x y
@@ -100,7 +105,7 @@ def inclusion : H →ₗ⁅R⁆ (SemiDirectSum H G ψ) where
     simp [Bracket.bracket]
 
 
-def projection : (SemiDirectSum H G ψ) →ₗ⁅R⁆ G where
+def projection : (H ⋊⁅ψ⁆ G) →ₗ⁅R⁆ G where
   toLinearMap := LinearMap.snd R H G
   map_lie' := by
     unfold SemiDirectSum
