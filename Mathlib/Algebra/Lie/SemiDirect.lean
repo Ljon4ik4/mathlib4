@@ -35,7 +35,7 @@ The semi-direct sum of two Lie algebras `H` and `G` over `R`, relative to A Lie 
 `ψ: G → Liederivation R H H `. As a set it just `H × G`, however the Lie bracket is twisted by `ψ`.
 -/
 def SemiDirectSum {R : Type*} [CommRing R] (H : Type*) [LieRing H] [LieAlgebra R H]
-    (G : Type*) [LieRing G] [LieAlgebra R G] (_ψ : G →ₗ⁅R⁆ (LieDerivation R H H)) := H × G
+    (G : Type*) [LieRing G] [LieAlgebra R G] (_ : G →ₗ⁅R⁆ (LieDerivation R H H)) := H × G
 
 @[inherit_doc]
 notation:35 H " ⋊⁅" ψ:35 "⁆ " G:35 => SemiDirectSum H G ψ
@@ -96,7 +96,7 @@ instance : LieAlgebra R (H ⋊⁅ψ⁆ G) where
       LieDerivation.coe_smul, Pi.smul_apply, Prod.smul_mk, Prod.mk.injEq, and_true]
     rw [← smul_add,← smul_sub]
 
-
+/-- The canonical inclusion of H into the semi-direct sum H ⋊⁅ψ⁆ G. -/
 def inclusion : H →ₗ⁅R⁆ (H ⋊⁅ψ⁆ G) where
   toLinearMap := LinearMap.inl R H G
   map_lie' := by
@@ -104,7 +104,7 @@ def inclusion : H →ₗ⁅R⁆ (H ⋊⁅ψ⁆ G) where
     unfold SemiDirectSum
     simp [Bracket.bracket]
 
-
+/-- The canonical projection from the semi-direct sum H ⋊⁅ψ⁆ G to G. -/
 def projection : (H ⋊⁅ψ⁆ G) →ₗ⁅R⁆ G where
   toLinearMap := LinearMap.snd R H G
   map_lie' := by
