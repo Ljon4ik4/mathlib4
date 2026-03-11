@@ -1,29 +1,6 @@
 import Mathlib.Algebra.Lie.BaseChange
-import Mathlib.Algebra.LieRinehartAlgebra.Semidirect_additions
 import Mathlib.RingTheory.Derivation.Lie
-
-
-section CompatibleDerivations
-
-variable {R : Type*} [CommRing R]
-variable {A : Type*} [CommRing A] [Algebra R A]
-variable {A' : Type*} [CommRing A'] [Algebra R A'] [Algebra A A'] [IsScalarTower R A A']
-
-variable (R A A') in
-def CompatibleDerivations : LieSubalgebra R  ( (Derivation R A' A') ⊕⁅R⁆ (Derivation R A A)) where
-  carrier := { x | (x.left).compAlgebraMapL R A A' A'
-    = (Algebra.ofId A A').toLinearMap.compDer (x.right) }
-  add_mem' {x y} hx hy  := by simp at hx hy; simp [hx,hy]
-  zero_mem' := by simp
-  smul_mem'  c x h := by simp at h; simp [h]
-  lie_mem' {x y} hx hy := by
-    have hxx (a : A) := congrArg (fun f => f a) hx
-    have hyy (a : A) := congrArg (fun f => f a) hy
-    simp at hxx hyy
-    ext z
-    simp [Derivation.commutator_apply, hxx, hyy]
-end CompatibleDerivations
-
+import Mathlib.Algebra.Lie.SemiDirect
 
 section LieDerivationExtendScalars
 open TensorProduct
@@ -82,3 +59,29 @@ lemma ExtendDerToLieDerHom_apply (d : Derivation R A A) (x : A ⊗[R] L) :
 
 
 end LieDerivationExtendScalars
+
+
+
+section
+variable {R : Type*} {A : Type*} {M : Type*}
+variable [CommSemiring R] [CommSemiring A] [AddCommMonoid M]
+variable [Algebra R A]
+variable [Module A M] [Module R M]
+
+
+theorem Derivation.coe_sum_linear_maps {ι : Type*} (t : Finset ι) (f : ι → (Derivation R A M)) :
+    ↑(∑ i ∈ t, f i) = ∑ i ∈ t, (f i : A →ₗ[R] M) :=
+  _root_.map_sum
+    (show AddMonoidHom (Derivation R A M) (A →ₗ[R] M)
+      from { toFun := toLinearMap,
+             map_zero' := rfl
+             map_add' := fun _ _ => rfl }) _ _
+
+theorem Derivation.sum_apply {ι : Type*} (t : Finset ι) (f : ι → (Derivation R A M)) (a : A) :
+    (∑ i ∈ t, f i) a = ∑ i ∈ t, (f i a) := by
+  rw [← Derivation.coeFn_coe]
+  rw [Derivation.coe_sum_linear_maps]
+  rw [LinearMap.sum_apply]
+  simp
+end
+
