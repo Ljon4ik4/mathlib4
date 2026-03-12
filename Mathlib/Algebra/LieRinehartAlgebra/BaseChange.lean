@@ -21,6 +21,7 @@ open TensorProduct
 lemma anchor_apply (l : L) (a : A) : (LieRinehartAlgebra.Hom.anchor R A L l) a = ⁅l, a⁆ := rfl
 
 
+
 private abbrev auxA : A' ⊗[A] L →ₗ[A] Derivation R A A' :=
     TensorProduct.lift ((LinearMap.lsmul A' (Derivation R A A')).restrictScalars₁₂ A A)
     ∘ₗ (((Algebra.ofId A A').toLinearMap.compDer)
@@ -95,6 +96,7 @@ def Basechange : Submodule A  ((A' ⊗[A] L) × (Derivation R A' A')) where
     simp at *
     simp [hx]
 
+variable (R A A' L) in
 def pr : (preBasechange R A A' L) →ₗ[R] (Basechange R A A' L) where
   toFun x := ⟨((TensorProduct.mapOfCompatibleSMul A R A' L x.val.left), x.val.right),by
     have hx : (_ = _) := x.property
@@ -103,6 +105,55 @@ def pr : (preBasechange R A A' L) →ₗ[R] (Basechange R A A' L) where
     simpa using hx⟩
   map_add'  := by simp
   map_smul' := by simp
+
+
+lemma pr_surjective : Function.Surjective (pr R A A' L) := by
+  intro y
+  have hy : (_ = _) := y.property
+  let x1 := Function.surjInv (mapOfCompatibleSMul_surjective A R A' L) y.val.1
+  have hx : ((mapOfCompatibleSMul A R A' L) x1) = y.val.1 := by simp [x1, Function.surjInv_eq]
+  use ⟨⟨x1, y.val.2⟩, by
+    simp only [preBasechange, LinearMap.coe_comp, LinearMap.restrictScalars_comp,
+      LinearMap.coe_restrictScalars, Function.comp_apply, LieSubalgebra.mem_mk_iff',
+      Submodule.mem_mk, AddSubmonoid.mem_mk, AddSubsemigroup.mem_mk, Set.mem_setOf_eq]
+    simpa [hx, hy]⟩
+  simp [pr, hx]
+
+
+#check LinearMap.ker (pr R A A' L)
+
+
+def kr : LieIdeal R (preBasechange R A A' L) where
+  __ := LinearMap.ker (pr R A A' L)
+  lie_mem := by
+    intros x m
+    have hx : ( _ = _ ) := x.property
+    intro hm
+    simp only [pr, Submodule.carrier_eq_coe, SetLike.mem_coe, LinearMap.mem_ker, LinearMap.coe_mk,
+      AddHom.coe_mk, Submodule.mk_eq_zero, Prod.mk_eq_zero] at hm
+    obtain ⟨hmleft, hmright⟩ := hm
+    simp only [pr, Submodule.carrier_eq_coe, SetLike.mem_coe, LinearMap.mem_ker, LinearMap.coe_mk,
+      AddHom.coe_mk, LieSubalgebra.coe_bracket, LieAlgebra.SemiDirectSum.lie_eq_mk,
+      ExtendDerToLieDerHom_apply, hmright, map_zero, LieDerivation.coe_zero, Pi.zero_apply,
+      sub_zero, lie_zero, map_add, Submodule.mk_eq_zero, Prod.mk_eq_zero, and_true]
+    obtain ⟨Sx, h_x_as_sum⟩ := exists_finset (x.val.left)
+    obtain ⟨Sm, h_m_as_sum⟩ := exists_finset (m.val.left)
+    rw [h_x_as_sum, h_m_as_sum]
+    simp [sum_lie_sum]
+    sorry
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 -- next: show pr is surjective
