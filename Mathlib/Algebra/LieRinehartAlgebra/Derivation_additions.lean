@@ -10,7 +10,7 @@ variable {L : Type*} [LieRing L] [LieAlgebra R L]
 
 variable (L) in
 def ExtendDerToLieDer (d : Derivation R A A) : LieDerivation R (A ⊗[R] L) (A ⊗[R] L) where
-  toFun := TensorProduct.map d.toLinearMap LinearMap.id
+  toFun := d.toLinearMap.rTensor L
   map_add' := by simp
   map_smul' := by simp
   leibniz' x y := by
@@ -20,8 +20,8 @@ def ExtendDerToLieDer (d : Derivation R A A) : LieDerivation R (A ⊗[R] L) (A �
       refine y.induction_on (by simp) ?_ ?_
       · intros _ l'
         rw [←sub_eq_zero]
-        simp only [LieAlgebra.ExtendScalars.bracket_tmul, map_tmul, Derivation.coeFn_coe,
-          Derivation.leibniz, smul_eq_mul, LinearMap.id_coe, id_eq, add_tmul]
+        simp only [LieAlgebra.ExtendScalars.bracket_tmul, LinearMap.rTensor_tmul,
+          Derivation.coeFn_coe, Derivation.leibniz, smul_eq_mul, add_tmul]
         rw [←(lie_skew l' l), tmul_neg]
         abel_nf
       · intros _ _ h1 h2
@@ -35,13 +35,13 @@ def ExtendDerToLieDer (d : Derivation R A A) : LieDerivation R (A ⊗[R] L) (A �
 
 @[simp]
 lemma ExtendDerToLieDer_apply (d : Derivation R A A) (x : A ⊗[R] L) :
-    (ExtendDerToLieDer L d) x = (TensorProduct.map d.toLinearMap LinearMap.id) x := rfl
+    (ExtendDerToLieDer L d) x = d.toLinearMap.rTensor L x := rfl
 
 variable (R A L)
 def ExtendDerToLieDerHom : (Derivation R A A) →ₗ⁅R⁆ (LieDerivation R (A ⊗[R] L) (A ⊗[R] L)) where
   toFun := ExtendDerToLieDer L
-  map_add' _ _ := by ext _; simp [map_add_left]
-  map_smul' _ _ := by ext _; simp [map_smul_left]
+  map_add' _ _ := by ext _; simp
+  map_smul' _ _ := by ext _; simp
   map_lie' {_ _} := by
     ext z
     simp only [ExtendDerToLieDer_apply, Derivation.commutator_coe_linear_map,
@@ -55,7 +55,7 @@ def ExtendDerToLieDerHom : (Derivation R A A) →ₗ⁅R⁆ (LieDerivation R (A 
 
 @[simp]
 lemma ExtendDerToLieDerHom_apply (d : Derivation R A A) (x : A ⊗[R] L) :
-    (ExtendDerToLieDerHom R A L d) x = (TensorProduct.map d.toLinearMap LinearMap.id) x := rfl
+    (ExtendDerToLieDerHom R A L d) x = d.toLinearMap.rTensor L x := rfl
 
 
 end LieDerivationExtendScalars
@@ -84,4 +84,3 @@ theorem Derivation.sum_apply {ι : Type*} (t : Finset ι) (f : ι → (Derivatio
   rw [LinearMap.sum_apply]
   simp
 end
-

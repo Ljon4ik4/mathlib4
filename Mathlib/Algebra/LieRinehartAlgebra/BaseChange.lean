@@ -17,17 +17,23 @@ variable {L : Type*} [LieRing L] [Module A L] [LieRingModule L A] [LieRinehartRi
 
 open TensorProduct
 
+-- this should be in Defs.lean, also maybe anchor should be moved out of the hom namespace
+lemma anchor_apply (l : L) (a : A) : (LieRinehartAlgebra.Hom.anchor R A L l) a = ⁅l, a⁆ := rfl
 
 
-private abbrev aux : A' ⊗[R] L →ₗ[R] Derivation R A A':=
-  (TensorProduct.lift ((LinearMap.lsmul A' (Derivation R A A')).restrictScalars₁₂ R R))
-  ∘ₗ (((((Algebra.ofId A A').toLinearMap.compDer).restrictScalars R)
-  ∘ₗ (LieRinehartAlgebra.Hom.anchor R A L).toLinearMap).lTensor A')
+private abbrev auxA : A' ⊗[A] L →ₗ[A] Derivation R A A' :=
+    TensorProduct.lift ((LinearMap.lsmul A' (Derivation R A A')).restrictScalars₁₂ A A)
+    ∘ₗ (((Algebra.ofId A A').toLinearMap.compDer)
+    ∘ₗ (LieRinehartAlgebra.Hom.anchor R A L).toLinearMap').lTensor A'
+
+private abbrev auxRR :  A' ⊗[R] L →ₗ[R] Derivation R A A' :=
+auxA (R:=R) (A:=A) (A':=A') (L:=L) ∘ₗ (TensorProduct.mapOfCompatibleSMul A R A' L)
+
 
 variable (R A A' L) in
-def PrePull : LieSubalgebra R  ((A' ⊗[R] L) ⋊⁅(ExtendDerToLieDerHom R A' L)⁆ (Derivation R A' A'))
-    where
-  carrier := {x | aux (x.left) = (Derivation.compAlgebraMapL R A A' A') x.right }
+def preBasechange :
+    LieSubalgebra R  ((A' ⊗[R] L) ⋊⁅(ExtendDerToLieDerHom R A' L)⁆ (Derivation R A' A')) where
+  carrier := {x | auxRR (x.left) = (Derivation.compAlgebraMapL R A A' A') x.right }
   zero_mem' := by simp
   add_mem' {_ _} hx hy := by
     rw [Set.mem_setOf,← LieAlgebra.SemiDirectSum.projl_mk,←LieAlgebra.SemiDirectSum.projr_mk] at *
@@ -39,8 +45,15 @@ def PrePull : LieSubalgebra R  ((A' ⊗[R] L) ⋊⁅(ExtendDerToLieDerHom R A' L
     simp
   lie_mem' {x y} hx hy := by
     -- helpful identities
-    have aux_ext_apply (a : A') (l : L) (z : A) : aux (R:=R) (a⊗ₜl) (z) =
-      a •  (Algebra.ofId A A') ⁅l, z⁆ := by simp [LieRinehartAlgebra.Hom.anchor]
+    have aux_ext_apply (a : A') (l : L) (z : A) : auxRR (R:=R) (a⊗ₜl) (z) =
+        a •  (Algebra.ofId A A') ⁅l, z⁆ := by
+      simp only [LinearMap.coe_comp, LinearMap.restrictScalars_comp, LinearMap.coe_restrictScalars,
+        Function.comp_apply, mapOfCompatibleSMul_tmul, LinearMap.lTensor_tmul, lift.tmul,
+        LinearMap.restrictScalars₁₂_apply_apply, LinearMap.lsmul_apply, Derivation.coe_smul,
+        Derivation.coe_comp, AlgHom.coe_toLinearMap, Derivation.coeFn_coe, Pi.smul_apply,
+        Algebra.ofId_apply, smul_eq_mul]
+      rw [LieRinehartAlgebra.Hom.toLinearMap'_apply]
+      simp [anchor_apply]
     have CompL_apply (d : Derivation R A' A') (z : A) :
       ((Derivation.compAlgebraMapL R A A' A') d) z = d ((Algebra.ofId A A') z) := rfl
     -- obtaining sum of elementary tensors representations of x and y and simifying the hypotheses
@@ -59,8 +72,8 @@ def PrePull : LieSubalgebra R  ((A' ⊗[R] L) ⋊⁅(ExtendDerToLieDerHom R A' L
       Derivation.leibniz, smul_eq_mul, ← hx,← hy, Finset.sum_add_distrib,← smul_eq_mul,
         Finset.smul_sum]
     -- transform LHS
-    simp_rw [h_x_as_sum, h_y_as_sum, sum_lie_sum, map_sum, ExtendDerToLieDerHom_apply, map_tmul,
-      LinearMap.id_apply, map_sub,map_add, map_sum, Derivation.sub_apply, Derivation.add_apply,
+    simp_rw [h_x_as_sum, h_y_as_sum, sum_lie_sum, map_sum, ExtendDerToLieDerHom_apply,
+      LinearMap.rTensor_tmul, map_sub,map_add, map_sum, Derivation.sub_apply, Derivation.add_apply,
       Derivation.sum_apply, LieAlgebra.ExtendScalars.bracket_tmul, aux_ext_apply, lie_lie, map_sub,
       smul_eq_mul, mul_sub, Finset.sum_sub_distrib]
     -- make them cancel
@@ -69,6 +82,36 @@ def PrePull : LieSubalgebra R  ((A' ⊗[R] L) ⋊⁅(ExtendDerToLieDerHom R A' L
     simp only [Algebra.ofId_apply, Derivation.coeFn_coe]
     ring_nf
     grind
+
+
+variable (R A A' L) in
+def Basechange : Submodule A  ((A' ⊗[A] L) × (Derivation R A' A')) where
+  carrier := {x | auxA (x.1) = (Derivation.compAlgebraMapL R A A' A') x.2 }
+  zero_mem' := by simp
+  add_mem' {_ _} hx hy := by
+    simp at *
+    grind
+  smul_mem' _ _ hx:= by
+    simp at *
+    simp [hx]
+
+def pr : (preBasechange R A A' L) →ₗ[R] (Basechange R A A' L) where
+  toFun x := ⟨((TensorProduct.mapOfCompatibleSMul A R A' L x.val.left), x.val.right),by
+    have hx : (_ = _) := x.property
+    change (_ = _)
+    simp only [LinearMap.coe_comp, Function.comp_apply] at hx
+    simpa using hx⟩
+  map_add'  := by simp
+  map_smul' := by simp
+
+
+-- next: show pr is surjective
+-- then: show that the kernel is a Lie ideal
+-- then: transport the bracket from the quotient of Prebasechange to basechange
+
+
+
+
 
 
 
