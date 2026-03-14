@@ -1,5 +1,6 @@
-import Mathlib
-
+import Mathlib.LinearAlgebra.Quotient.Basic
+import Mathlib.LinearAlgebra.TensorProduct.Finiteness
+import Mathlib.LinearAlgebra.TensorProduct.Tower
 
 variable (R : Type*) [CommRing R]
 variable (A : Type*) [CommRing A] [Algebra R A]
@@ -9,8 +10,29 @@ variable (N : Type*) [AddCommGroup N] [Module R N] [Module A N] [IsScalarTower R
 open TensorProduct
 
 
+abbrev elementary_rel := {x | ∃ (a : A) (m: M) (n : N), (a • m) ⊗ₜ[R] n - m ⊗ₜ[R] (a • n) = x}
+
+variable {R A M N} in
+omit [IsScalarTower R A N] in
+lemma smul_elementary_rel (a : A) (x : (M ⊗[R] N)) :
+    x ∈ (elementary_rel R A M N) → a • x ∈ (elementary_rel R A M N) := by
+  simp only [Set.mem_setOf_eq, forall_exists_index]
+  intros a' m n h
+  use  a'
+  use a •m
+  use n
+  rw [← h]
+  simp_rw [smul_sub, ← smul_tmul']
+  simp only [sub_left_inj]
+  simp [smul_smul, mul_comm]
+
+
+
+
+
+
 abbrev span_of_smul_tmul :=
-  (Submodule.span A {x | ∃ (a : A) (m: M) (n : N), (a • m) ⊗ₜ[R] n - m ⊗ₜ[R] (a • n) = x})
+  (Submodule.span A (elementary_rel R A M N))
 
 def map_to_quot : M →ₗ[A] N →ₗ[A] ((M⊗[R] N) ⧸ (span_of_smul_tmul R A M N)) where
   toFun m := {
@@ -55,9 +77,8 @@ lemma compose_eq_mkQ :(tens_to_quot R A M N) ∘ₗ (mapOfCompatibleSMul' A R M 
 
 lemma span_in_ker : (span_of_smul_tmul R A M N) ≤ (mapOfCompatibleSMul' A R M N).ker := by
   rw [LinearMap.le_ker_iff_comp_subtype_eq_zero]
-  let S := {x | ∃ (a : A) (m: M) (n : N), (a • m) ⊗ₜ[R] n - m ⊗ₜ[R] (a • n) = x}
-  have hS : span_of_smul_tmul R A M N = Submodule.span A S := rfl
-  rw [Submodule.linearMap_eq_zero_iff_of_eq_span (S:=S) (hV:=hS)]
+  have hS : span_of_smul_tmul R A M N = Submodule.span A (elementary_rel R A M N) := rfl
+  rw [Submodule.linearMap_eq_zero_iff_of_eq_span (S:=(elementary_rel R A M N)) (hV:=hS)]
   simp only [LinearMap.coe_comp, Submodule.coe_subtype, Function.comp_apply, Subtype.forall]
   intro x hx
   rw [Set.mem_setOf] at hx

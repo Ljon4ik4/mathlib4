@@ -1,7 +1,44 @@
 import Mathlib.Algebra.LieRinehartAlgebra.Derivation_additions
+import Mathlib.Algebra.LieRinehartAlgebra.TensorStuff
 import Mathlib.Algebra.LieRinehartAlgebra.Defs
 import Mathlib.Algebra.Lie.Basic
+import Mathlib.Algebra.Lie.Quotient
 import Mathlib.LinearAlgebra.TensorProduct.Finiteness
+
+
+
+section
+--this should be in Defs
+variable {A L : Type*} [CommRing A] [LieRing L] [Module A L] [LieRingModule L A]
+    [LieRinehartRing A L]
+
+@[simp]
+lemma LieRinehartRing.lie_smul_eq_mul' (a b : A) (x : L) : ⁅a • x, b⁆ = a * ⁅x, b⁆ :=
+  LieRinehartRing.lie_smul_eq_mul a b x
+
+@[simp]
+lemma LieRinehartRing.leibniz_mul_right' (x : L) (a b : A) :
+    ⁅x, a * b⁆ = a • ⁅x, b⁆ + ⁅x, a⁆ * b := LieRinehartRing.leibniz_mul_right x a b
+
+@[simp]
+lemma LieRinehartRing.leibniz_smul_right' (x y : L) (a : A) :
+    ⁅x, a • y⁆ = a • ⁅x, y⁆ + ⁅x, a⁆ • y := LieRinehartRing.leibniz_smul_right x y a
+
+
+end
+
+
+section
+variable (R : Type*) [CommRing R]
+variable (M : Type*) [AddCommGroup M] [Module R M]
+
+variable (S : Set M)
+
+lemma mod_span_eq_add_span (hS : ∀ m ∈ S, ∀ r : R, 1 • m ∈ S) :
+    (Submodule.span R S).toAddSubmonoid = AddSubmonoid.closure S := by
+  sorry
+
+end
 
 
 
@@ -30,6 +67,15 @@ private abbrev auxA : A' ⊗[A] L →ₗ[A] Derivation R A A' :=
 private abbrev auxRR :  A' ⊗[R] L →ₗ[R] Derivation R A A' :=
 auxA (R:=R) (A:=A) (A':=A') (L:=L) ∘ₗ (TensorProduct.mapOfCompatibleSMul A R A' L)
 
+private lemma aux_ext_apply (a : A') (l : L) (z : A) : auxRR (R:=R) (a⊗ₜl) (z) =
+    a •  (Algebra.ofId A A') ⁅l, z⁆ := by
+  simp only [LinearMap.coe_comp, LinearMap.restrictScalars_comp, LinearMap.coe_restrictScalars,
+    Function.comp_apply, mapOfCompatibleSMul_tmul, LinearMap.lTensor_tmul, lift.tmul,
+    LinearMap.restrictScalars₁₂_apply_apply, LinearMap.lsmul_apply, Derivation.coe_smul,
+    Derivation.coe_comp, AlgHom.coe_toLinearMap, Derivation.coeFn_coe, Pi.smul_apply,
+    Algebra.ofId_apply, smul_eq_mul]
+  rw [LieRinehartAlgebra.Hom.toLinearMap'_apply]
+  simp [anchor_apply]
 
 variable (R A A' L) in
 def preBasechange :
@@ -46,15 +92,6 @@ def preBasechange :
     simp
   lie_mem' {x y} hx hy := by
     -- helpful identities
-    have aux_ext_apply (a : A') (l : L) (z : A) : auxRR (R:=R) (a⊗ₜl) (z) =
-        a •  (Algebra.ofId A A') ⁅l, z⁆ := by
-      simp only [LinearMap.coe_comp, LinearMap.restrictScalars_comp, LinearMap.coe_restrictScalars,
-        Function.comp_apply, mapOfCompatibleSMul_tmul, LinearMap.lTensor_tmul, lift.tmul,
-        LinearMap.restrictScalars₁₂_apply_apply, LinearMap.lsmul_apply, Derivation.coe_smul,
-        Derivation.coe_comp, AlgHom.coe_toLinearMap, Derivation.coeFn_coe, Pi.smul_apply,
-        Algebra.ofId_apply, smul_eq_mul]
-      rw [LieRinehartAlgebra.Hom.toLinearMap'_apply]
-      simp [anchor_apply]
     have CompL_apply (d : Derivation R A' A') (z : A) :
       ((Derivation.compAlgebraMapL R A A' A') d) z = d ((Algebra.ofId A A') z) := rfl
     -- obtaining sum of elementary tensors representations of x and y and simifying the hypotheses
@@ -122,7 +159,8 @@ lemma pr_surjective : Function.Surjective (pr R A A' L) := by
 
 #check LinearMap.ker (pr R A A' L)
 
-
+open Pointwise
+variable (R A A' L) in
 def kr : LieIdeal R (preBasechange R A A' L) where
   __ := LinearMap.ker (pr R A A' L)
   lie_mem := by
@@ -132,33 +170,55 @@ def kr : LieIdeal R (preBasechange R A A' L) where
     simp only [pr, Submodule.carrier_eq_coe, SetLike.mem_coe, LinearMap.mem_ker, LinearMap.coe_mk,
       AddHom.coe_mk, Submodule.mk_eq_zero, Prod.mk_eq_zero] at hm
     obtain ⟨hmleft, hmright⟩ := hm
+    change m.val.left ∈ (mapOfCompatibleSMul' A R A' L).ker at hmleft
+    rw [CompatibleSMul_ker_eq_span] at hmleft
     simp only [pr, Submodule.carrier_eq_coe, SetLike.mem_coe, LinearMap.mem_ker, LinearMap.coe_mk,
       AddHom.coe_mk, LieSubalgebra.coe_bracket, LieAlgebra.SemiDirectSum.lie_eq_mk,
       ExtendDerToLieDerHom_apply, hmright, map_zero, LieDerivation.coe_zero, Pi.zero_apply,
       sub_zero, lie_zero, map_add, Submodule.mk_eq_zero, Prod.mk_eq_zero, and_true]
     obtain ⟨Sx, h_x_as_sum⟩ := exists_finset (x.val.left)
-    obtain ⟨Sm, h_m_as_sum⟩ := exists_finset (m.val.left)
-    rw [h_x_as_sum, h_m_as_sum]
-    simp [sum_lie_sum]
-    sorry
+    rw [← Submodule.mem_toAddSubmonoid, Submodule.span_eq_closure] at hmleft
+    have helper :  ( (@Set.univ A) • (elementary_rel R A A' L)) = elementary_rel R A A' L := by
+      refine Set.Subset.antisymm ?_ ?_
+      · refine Set.smul_subset_iff.mpr ?_
+        intros a ha b hb
+        simp_rw [(smul_elementary_rel a b hb)]
+      · intros x hx
+        refine Set.mem_smul.mpr ?_
+        use (1 : A)
+        refine ⟨trivial, ?_⟩
+        use x
+        refine ⟨hx, by simp⟩
+    rw [helper] at hmleft
+    refine AddSubmonoid.closure_induction ?_ ?_ ?_ hmleft
+    · intro y hy
+      obtain ⟨a, a', l, h⟩ := hy
+      simp_rw [← h, h_x_as_sum]
+      simp only [lie_sub, sum_lie, LieAlgebra.ExtendScalars.bracket_tmul, Algebra.mul_smul_comm,
+        LieRinehartRing.leibniz_smul_right', map_sub, map_sum, mapOfCompatibleSMul_tmul,
+        LinearMap.rTensor_tmul, Derivation.coeFn_coe, tmul_smul]
+      rw [← (algebraMap_smul A' a a'), smul_eq_mul, Derivation.leibniz, add_tmul, smul_tmul']
+      simp_rw [(algebraMap_smul A' a _)]
+      simp only [smul_eq_mul, add_sub_cancel_left]
+      have h : x.val.right ((algebraMap A A') a)
+          = ((Derivation.compAlgebraMapL R A A' A') x.val.right) a := by simp
+      rw [h, ← hx, h_x_as_sum]
+      simp_rw [map_sum, Derivation.sum_apply, aux_ext_apply, Finset.mul_sum]
+      simp_rw [tmul_add, ← Finset.sum_sub_distrib, sum_tmul, ← Finset.sum_add_distrib]
+      simp_rw [tmul_smul, smul_tmul']
+      abel_nf
+      simp_rw [smul_tmul', ← add_tmul, smul_eq_mul]
+      conv =>
+        lhs
+        enter [2, x, 2, 2, 2]
+        rw [mul_comm, ← smul_eq_mul, Algebra.ofId_apply, algebraMap_smul]
+      simp [mul_comm]
+    · simp
+    · intros u v hu hv hxu hxv
+      rw [lie_add,map_add]
+      grind
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
--- next: show pr is surjective
--- then: show that the kernel is a Lie ideal
--- then: transport the bracket from the quotient of Prebasechange to basechange
+#synth LieAlgebra R ((preBasechange R A A' L) ⧸ (kr R A A' L))
 
 
 
