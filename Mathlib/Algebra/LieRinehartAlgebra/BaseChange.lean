@@ -24,23 +24,7 @@ lemma LieRinehartRing.leibniz_mul_right' (x : L) (a b : A) :
 lemma LieRinehartRing.leibniz_smul_right' (x y : L) (a : A) :
     ⁅x, a • y⁆ = a • ⁅x, y⁆ + ⁅x, a⁆ • y := LieRinehartRing.leibniz_smul_right x y a
 
-
 end
-
-
-section
-variable (R : Type*) [CommRing R]
-variable (M : Type*) [AddCommGroup M] [Module R M]
-
-variable (S : Set M)
-
-lemma mod_span_eq_add_span (hS : ∀ m ∈ S, ∀ r : R, 1 • m ∈ S) :
-    (Submodule.span R S).toAddSubmonoid = AddSubmonoid.closure S := by
-  sorry
-
-end
-
-
 
 
 section
@@ -52,11 +36,12 @@ variable {A' : Type*} [CommRing A'] [Algebra R A'] [Algebra A A'] [IsScalarTower
 variable {L : Type*} [LieRing L] [Module A L] [LieRingModule L A] [LieRinehartRing A L]
     [LieAlgebra R L] [LieRinehartAlgebra R A L]
 
-open TensorProduct
-
 -- this should be in Defs.lean, also maybe anchor should be moved out of the hom namespace
 lemma anchor_apply (l : L) (a : A) : (LieRinehartAlgebra.Hom.anchor R A L l) a = ⁅l, a⁆ := rfl
 
+
+
+open TensorProduct
 
 
 private abbrev auxA : A' ⊗[A] L →ₗ[A] Derivation R A A' :=
@@ -67,6 +52,7 @@ private abbrev auxA : A' ⊗[A] L →ₗ[A] Derivation R A A' :=
 private abbrev auxRR :  A' ⊗[R] L →ₗ[R] Derivation R A A' :=
 auxA (R:=R) (A:=A) (A':=A') (L:=L) ∘ₗ (TensorProduct.mapOfCompatibleSMul A R A' L)
 
+
 private lemma aux_ext_apply (a : A') (l : L) (z : A) : auxRR (R:=R) (a⊗ₜl) (z) =
     a •  (Algebra.ofId A A') ⁅l, z⁆ := by
   simp only [LinearMap.coe_comp, LinearMap.restrictScalars_comp, LinearMap.coe_restrictScalars,
@@ -76,6 +62,7 @@ private lemma aux_ext_apply (a : A') (l : L) (z : A) : auxRR (R:=R) (a⊗ₜl) (
     Algebra.ofId_apply, smul_eq_mul]
   rw [LieRinehartAlgebra.Hom.toLinearMap'_apply]
   simp [anchor_apply]
+
 
 variable (R A A' L) in
 def preBasechange :
@@ -143,7 +130,6 @@ def pr : (preBasechange R A A' L) →ₗ[R] (Basechange R A A' L) where
   map_add'  := by simp
   map_smul' := by simp
 
-
 lemma pr_surjective : Function.Surjective (pr R A A' L) := by
   intro y
   have hy : (_ = _) := y.property
@@ -157,9 +143,7 @@ lemma pr_surjective : Function.Surjective (pr R A A' L) := by
   simp [pr, hx]
 
 
-#check LinearMap.ker (pr R A A' L)
-
-open Pointwise
+open scoped Pointwise
 variable (R A A' L) in
 def kr : LieIdeal R (preBasechange R A A' L) where
   __ := LinearMap.ker (pr R A A' L)
@@ -218,12 +202,8 @@ def kr : LieIdeal R (preBasechange R A A' L) where
       rw [lie_add,map_add]
       grind
 
-#synth LieAlgebra R ((preBasechange R A A' L) ⧸ (kr R A A' L))
-
-
-
-
-
+-- next steps: transfer the Lie algebra structure to Basechange
+-- show the other axioms of LieRinehartAlgebra
 
 
 end

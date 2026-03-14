@@ -26,11 +26,6 @@ lemma smul_elementary_rel (a : A) (x : (M ⊗[R] N)) :
   simp only [sub_left_inj]
   simp [smul_smul, mul_comm]
 
-
-
-
-
-
 abbrev span_of_smul_tmul :=
   (Submodule.span A (elementary_rel R A M N))
 
