@@ -233,7 +233,6 @@ def kr : LieIdeal R (preBasechange R A A' L) where
 noncomputable abbrev iso : ((preBasechange R A A' L) ⧸ (kr R A A' L)) ≃ₗ[R] (Basechange R A A' L)
   := LinearMap.quotKerEquivOfSurjective (pr R A A' L) (pr_surjective)
 
-
 noncomputable instance : LieRing (Basechange R A A' L) where
   bracket x y := iso ⁅ iso.symm x, iso.symm y⁆
   add_lie _ _ _ := by simp
@@ -241,16 +240,31 @@ noncomputable instance : LieRing (Basechange R A A' L) where
   lie_self _  := by simp
   leibniz_lie _ _ _ := by simp
 
-lemma bracket_iso (x y : (Basechange R A A' L)) : ⁅x, y⁆ = iso ⁅ iso.symm x, iso.symm y⁆ := rfl
+lemma bracket_unfold (x y : (Basechange R A A' L)) : ⁅x, y⁆ = iso ⁅ iso.symm x, iso.symm y⁆ := rfl
+
 
 noncomputable instance : LieAlgebra R (Basechange R A A' L) where
-  lie_smul r x y := by simp [bracket_iso]
+  lie_smul r x y := by
+    simp [bracket_unfold]
+
+noncomputable def iso' : ((preBasechange R A A' L) ⧸ (kr R A A' L)) ≃ₗ⁅R⁆ (Basechange R A A' L)
+    where
+  __ := iso
+  map_lie' {x y} := by simp [bracket_unfold]
+
+noncomputable def snd : (Basechange R A A' L) →ₗ⁅R⁆ Derivation R A' A' where
+  __ := (LinearMap.snd R (A' ⊗[A] L) (Derivation R A' A')) ∘ₗ ((Basechange R A A' L).subtype)
+  map_lie' {x y} := by
+    simp [bracket_unfold]
+    sorry
 
 noncomputable instance : LieRingModule  (Basechange R A A' L) A' where
-  bracket x y := ⁅x.1.2, y⁆
+  bracket x y := (snd x) y
   add_lie _ _ := by simp
   lie_add _ _ := by simp
-  leibniz_lie _ _ _ := by simp; sorry
+  leibniz_lie x y a := by
+    rw [LieHom.map_lie, Derivation.commutator_apply]
+    simp
 
 noncomputable instance : LieRinehartRing A' (Basechange R A A' L) where
   lie_smul_eq_mul' := sorry
