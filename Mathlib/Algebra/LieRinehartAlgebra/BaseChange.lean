@@ -71,8 +71,29 @@ private abbrev auxA : A' ⊗[A] L →ₗ[A] Derivation R A A' :=
     ∘ₗ (((Algebra.ofId A A').toLinearMap.compDer)
     ∘ₗ (LieRinehartAlgebra.anchor R A L).toLinearMap').lTensor A'
 
+
+private lemma auxA_ext_apply (a : A') (l : L) (z : A) : auxA (R:=R) (a⊗ₜl) (z) =
+    a •  (Algebra.ofId A A') ⁅l, z⁆ := by
+  simp
+  rfl
+
+private abbrev auxA' : A' ⊗[A] L →ₗ[A'] Derivation R A A' where
+  toFun := auxA
+  map_add' := auxA.map_add'
+  map_smul' a x := by
+    refine x.induction_on ?_ ?_ ?_
+    · simp
+    · intros b l
+      ext z
+      rw [smul_tmul', auxA_ext_apply]
+      rw [Derivation.smul_apply, auxA_ext_apply]
+      simp
+      ring
+    · simp_all
+
+
 private abbrev auxRR :  A' ⊗[R] L →ₗ[A] Derivation R A A' :=
-auxA (R:=R) (A:=A) (A':=A') (L:=L) ∘ₗ (TensorProduct.mapOfCompatibleSMul A R A A' L)
+auxA' (R:=R) (A:=A) (A':=A') (L:=L) ∘ₗ (TensorProduct.mapOfCompatibleSMul A R A A' L)
 
 private lemma aux_ext_apply (a : A') (l : L) (z : A) : auxRR (R:=R) (a⊗ₜl) (z) =
     a •  (Algebra.ofId A A') ⁅l, z⁆ := by
@@ -123,14 +144,14 @@ def preBasechange :
 
 
 variable (R A A' L) in
-def Basechange : Submodule A  ((A' ⊗[A] L) × (Derivation R A' A')) where
-  carrier := {x | auxA (x.1) = (Derivation.compAlgebraMapL R A A' A') x.2 }
+def Basechange : Submodule A'  ((A' ⊗[A] L) × (Derivation R A' A')) where
+  carrier := {x | auxA' (x.1) = (Derivation.compAlgebraMapL R A A' A') x.2 }
   zero_mem' := by simp
   add_mem' {_ _} hx hy := by
     simp at *
     grind
-  smul_mem' _ _ hx:= by
-    simp at *
+  smul_mem' a x hx:= by
+    rw [Set.mem_setOf_eq] at *
     simp [hx]
 
 variable (R A A' L) in
@@ -151,7 +172,7 @@ lemma pr_surjective : Function.Surjective (pr R A A' L) := by
   use ⟨⟨x1, y.val.2⟩, by
     simp only [preBasechange, LinearMap.coe_comp, Function.comp_apply, LieSubalgebra.mem_mk_iff',
       Submodule.mem_mk, AddSubmonoid.mem_mk, AddSubsemigroup.mem_mk, Set.mem_setOf_eq]
-    simpa [hx, hy]⟩
+    simp [hx, hy]⟩
   simp [pr, hx]
 
 
@@ -170,10 +191,11 @@ def kr : LieIdeal R (preBasechange R A A' L) where
     change m.val.left ∈ (mapOfCompatibleSMul A R A A' L).ker at hmleft
     rw [TensorProduct.AlgebraTensorModule.ker_mapOfCompatibleSMul] at hmleft
     -- simplify the goal
-    simp only [hmright, Submodule.carrier_eq_coe, SetLike.mem_coe, LinearMap.mem_ker, LinearMap.coe_mk,
-      AddHom.coe_mk, LieSubalgebra.coe_bracket, LieAlgebra.SemiDirectSum.lie_eq_mk,
-      Lie.Derivation.ofDerivation_apply, map_zero, LieDerivation.coe_zero, Pi.zero_apply,
-      sub_zero, lie_zero, map_add, Submodule.mk_eq_zero, Prod.mk_eq_zero, and_true]
+    simp only [hmright, Submodule.carrier_eq_coe, SetLike.mem_coe, LinearMap.mem_ker,
+      LinearMap.coe_mk, AddHom.coe_mk, LieSubalgebra.coe_bracket,
+      LieAlgebra.SemiDirectSum.lie_eq_mk, Lie.Derivation.ofDerivation_apply, map_zero,
+      LieDerivation.coe_zero, Pi.zero_apply, sub_zero, lie_zero, map_add, Submodule.mk_eq_zero,
+      Prod.mk_eq_zero, and_true]
     -- show the goal by induction on `m`
     refine Submodule.closure_induction ?_ ?_ ?_ hmleft
     · simp
@@ -190,8 +212,8 @@ def kr : LieIdeal R (preBasechange R A A' L) where
         abel_nf
       simp_rw [hz.symm]
       --
-      simp_rw [lie_sub, map_sub, LinearMap.rTensor_tmul, Derivation.coeFn_coe, mapOfCompatibleSMul_tmul,
-        tmul_smul, Derivation.leibniz_smul, hx.symm, add_tmul, smul_tmul']
+      simp_rw [lie_sub, map_sub, LinearMap.rTensor_tmul, Derivation.coeFn_coe,
+        mapOfCompatibleSMul_tmul, tmul_smul, Derivation.leibniz_smul, hx.symm, add_tmul, smul_tmul']
       simp_rw [h_x_as_sum, sum_lie, map_sum, Derivation.sum_apply, aux_ext_apply]
       simp only [LieAlgebra.ExtendScalars.bracket_tmul, Algebra.mul_smul_comm,
         mapOfCompatibleSMul_tmul, LieRinehartAlgebra.LieRinehartRing.leibniz_smul_right,
@@ -207,6 +229,35 @@ def kr : LieIdeal R (preBasechange R A A' L) where
       simp
       ring_nf
       exact zero_tmul A' l
+
+noncomputable abbrev iso : ((preBasechange R A A' L) ⧸ (kr R A A' L)) ≃ₗ[R] (Basechange R A A' L)
+  := LinearMap.quotKerEquivOfSurjective (pr R A A' L) (pr_surjective)
+
+
+noncomputable instance : LieRing (Basechange R A A' L) where
+  bracket x y := iso ⁅ iso.symm x, iso.symm y⁆
+  add_lie _ _ _ := by simp
+  lie_add _ _ _ := by simp
+  lie_self _  := by simp
+  leibniz_lie _ _ _ := by simp
+
+lemma bracket_iso (x y : (Basechange R A A' L)) : ⁅x, y⁆ = iso ⁅ iso.symm x, iso.symm y⁆ := rfl
+
+noncomputable instance : LieAlgebra R (Basechange R A A' L) where
+  lie_smul r x y := by simp [bracket_iso]
+
+noncomputable instance : LieRingModule  (Basechange R A A' L) A' where
+  bracket x y := ⁅x.1.2, y⁆
+  add_lie _ _ := by simp
+  lie_add _ _ := by simp
+  leibniz_lie _ _ _ := by simp; sorry
+
+noncomputable instance : LieRinehartRing A' (Basechange R A A' L) where
+  lie_smul_eq_mul' := sorry
+  leibniz_mul_right' := sorry
+  leibniz_smul_right' := sorry
+
+
 
 end
 end
