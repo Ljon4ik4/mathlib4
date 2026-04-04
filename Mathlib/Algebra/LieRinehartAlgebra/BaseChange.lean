@@ -87,12 +87,6 @@ def Basechange : Submodule A'  ((A' ⊗[A] L) × (Derivation R A' A')) where
 private abbrev auxR :  A' ⊗[R] L →ₗ[A] Derivation R A A' :=
 auxA (R:=R) (A:=A) (A':=A') (L:=L) ∘ₗ (TensorProduct.mapOfCompatibleSMul A R A A' L)
 
--- todo: remove the former one, rewrite proofs in terms of the second one
-private lemma aux_ext_apply (a : A') (l : L) (z : A) : auxR (R:=R) (a⊗ₜl) (z) =
-    a • (Algebra.ofId A A') ⁅l, z⁆ := by
-  simp
-  rfl
-
 private lemma aux_ext_apply' (a : A') (l : L) (z : A) : auxR (R:=R) (a⊗ₜl) (z) =
     ⁅l, z⁆ • a := by
   simp [Algebra.smul_def, mul_comm]
@@ -114,28 +108,30 @@ def preBasechange :
     classical
     obtain ⟨Sx, h_x_as_sum⟩ := exists_finset (x.left)
     replace hx (t : A) := congrArg (fun f => f t) hx
-    simp only [h_x_as_sum, map_sum, Derivation.sum_apply, aux_ext_apply, CompL_apply] at hx
+    simp_rw [h_x_as_sum, map_sum, Derivation.sum_apply, aux_ext_apply', CompL_apply] at hx
     obtain ⟨Sy, h_y_as_sum⟩ := exists_finset (y.left)
     replace hy (t : A) := congrArg (fun f => f t) hy
-    simp only [h_y_as_sum, map_sum, Derivation.sum_apply, aux_ext_apply, CompL_apply] at hy
+    simp only [h_y_as_sum, map_sum, Derivation.sum_apply, aux_ext_apply', CompL_apply] at hy
     -- simplifying the main goal
     ext z
     simp_rw [LieAlgebra.SemiDirectSum.lie_eq_mk]
     -- transform RHS
-    simp_rw [CompL_apply, Derivation.commutator_apply, ← hx,← hy, map_sum, smul_eq_mul,
-      Derivation.leibniz, smul_eq_mul, ← hx,← hy, Finset.sum_add_distrib,← smul_eq_mul,
-        Finset.smul_sum]
+    simp_rw [CompL_apply, Derivation.commutator_apply, ← hx,← hy, map_sum,
+      Derivation.leibniz_smul, smul_eq_mul, CompL_apply, ← hx,← hy, Finset.sum_add_distrib,
+      ← smul_eq_mul, Finset.smul_sum]
     -- transform LHS
     simp_rw [h_x_as_sum, h_y_as_sum, sum_lie_sum, map_sum, Lie.Derivation.ofDerivation_apply,
       LinearMap.rTensor_tmul, map_sub,map_add, map_sum, Derivation.sub_apply, Derivation.add_apply,
-      Derivation.sum_apply, LieAlgebra.ExtendScalars.bracket_tmul, aux_ext_apply, lie_lie, map_sub,
-      smul_eq_mul, mul_sub, Finset.sum_sub_distrib]
+      Derivation.sum_apply, LieAlgebra.ExtendScalars.bracket_tmul, aux_ext_apply', lie_lie,sub_smul,
+      smul_eq_mul, Finset.sum_sub_distrib]
     -- make them cancel
     rw [← sub_eq_zero]
     simp_rw [← sub_sub, ← sub_add, ← sub_sub, (Finset.sum_comm (s:=Sy) (t := Sx))]
-    simp only [Algebra.ofId_apply, Derivation.coeFn_coe]
+    simp only [Derivation.coeFn_coe]
     ring_nf
-    grind
+    abel_nf
+    simp_rw [neg_smul, one_smul, Algebra.mul_smul_comm, neg_add_cancel_comm_assoc, mul_comm,
+      add_neg_cancel]
 
 variable (R A A' L) in
 private abbrev pr : (preBasechange R A A' L) →ₗ[R] (Basechange R A A' L) where
