@@ -60,7 +60,7 @@ variable {L : Type*} [LieRing L] [Module A L] [LieRingModule L A] [LieRinehartRi
 
 open TensorProduct
 
-private abbrev anchor_comp := LinearMap.liftBaseChange (A := A')
+private def anchor_comp := LinearMap.liftBaseChange (A := A')
   (((Algebra.ofId A A').toLinearMap.compDer) ∘ₗ (LieRinehartAlgebra.anchor R A L).toLinearMap')
 
 private lemma anchor_comp_apply (a : A') (l : L) (z : A) : anchor_comp (R := R) (a⊗ₜl) (z) =
@@ -76,10 +76,8 @@ def Basechange : Submodule A'  ((A' ⊗[A] L) × (Derivation R A' A')) where
   smul_mem' _ _ _ := by simp_all
 
 
-#check Derivation.compAlgebraMapL_apply_apply
-
 variable (R A A' L) in
-private def preBasechange :
+private abbrev preBasechange :
     LieSubalgebra R  ((A' ⊗[R] L) ⋊⁅(Lie.Derivation.ofDerivation L)⁆ (Derivation R A' A')) where
   carrier := {x | anchor_comp ((mapOfCompatibleSMul A R A A' L) (x.left))
     = (Derivation.compAlgebraMapL R A A' A') x.right }
@@ -87,40 +85,23 @@ private def preBasechange :
   add_mem' {_ _} _ _ := by simp_all
   smul_mem' _ _ _:= by simp_all
   lie_mem' {x y} hx hy := by
-    -- helpful identities
-    have CompL_apply (d : Derivation R A' A') (z : A) :
-      ((Derivation.compAlgebraMapL R A A' A') d) z = d ((Algebra.ofId A A') z) := rfl
-    -- obtaining sum of elementary tensors representations of x and y and simifying the hypotheses
-    classical
-    obtain ⟨Sx, h_x_as_sum⟩ := exists_finset (x.left)
     replace hx (t : A) := congrArg (fun f => f t) hx
-    simp_rw [h_x_as_sum, map_sum, Derivation.sum_apply,mapOfCompatibleSMul_tmul ,
-      anchor_comp_apply, CompL_apply] at hx
-    obtain ⟨Sy, h_y_as_sum⟩ := exists_finset (y.left)
     replace hy (t : A) := congrArg (fun f => f t) hy
-    simp only [h_y_as_sum, map_sum, Derivation.sum_apply, mapOfCompatibleSMul_tmul ,
-      anchor_comp_apply, CompL_apply] at hy
-    -- simplifying the main goal
     ext z
-    simp_rw [LieAlgebra.SemiDirectSum.lie_eq_mk]
-    -- transform RHS
-    simp_rw [CompL_apply, Derivation.commutator_apply, ← hx,← hy, map_sum,
-      Derivation.leibniz_smul, smul_eq_mul, CompL_apply, ← hx,← hy, Finset.sum_add_distrib,
-      ← smul_eq_mul, Finset.smul_sum]
-    -- transform LHS
-    simp_rw [h_x_as_sum, h_y_as_sum, sum_lie_sum, map_sum, Lie.Derivation.ofDerivation_apply,
-      LinearMap.rTensor_tmul, map_sub,map_add, map_sum, Derivation.sub_apply, Derivation.add_apply,
-      Derivation.sum_apply, LieAlgebra.ExtendScalars.bracket_tmul, mapOfCompatibleSMul_tmul ,
-      anchor_comp_apply, lie_lie,sub_smul,
-      smul_eq_mul, Finset.sum_sub_distrib]
-    -- make them cancel
     rw [← sub_eq_zero]
-    simp_rw [← sub_sub, ← sub_add, ← sub_sub, (Finset.sum_comm (s:=Sy) (t := Sx))]
-    simp only [Derivation.coeFn_coe]
+    obtain ⟨Sx, h_x_as_sum⟩ := exists_finset (x.left)
+    obtain ⟨Sy, h_y_as_sum⟩ := exists_finset (y.left)
+    -- should 'only' be added to the simps here?
+    simp_all [Derivation.commutator_apply, sum_lie_sum, Derivation.sum_apply, anchor_comp_apply]
+    simp [← hx, ← hy, Derivation.leibniz_smul, sub_smul, Finset.sum_add_distrib]
     ring_nf
-    abel_nf
-    simp_rw [neg_smul, one_smul, Algebra.mul_smul_comm, neg_add_cancel_comm_assoc, mul_comm,
-      add_neg_cancel]
+    simp_rw [Finset.mul_sum, (Finset.sum_comm (s:=Sy) (t := Sx))]
+    simp only [← Finset.sum_sub_distrib, Algebra.mul_smul_comm, ← Finset.sum_add_distrib]
+    refine Finset.sum_eq_zero ?_
+    intro _ _
+    refine Finset.sum_eq_zero ?_
+    intro _ _
+    ring_nf
 
 variable (R A A' L) in
 private abbrev pr : (preBasechange R A A' L) →ₗ[R] (Basechange R A A' L) where
@@ -136,12 +117,8 @@ private lemma pr_surjective : Function.Surjective (pr R A A' L) := by
   have hy : (_ = _) := y.property
   let x1 := Function.surjInv (mapOfCompatibleSMul_surjective A R A A' L) y.val.1
   have hx : ((mapOfCompatibleSMul A R A A' L) x1) = y.val.1 := by simp [x1, Function.surjInv_eq]
-  use ⟨⟨x1, y.val.2⟩, by
-    simp only [preBasechange, LieSubalgebra.mem_mk_iff',
-      Submodule.mem_mk, AddSubmonoid.mem_mk, AddSubsemigroup.mem_mk, Set.mem_setOf_eq]
-    simp [hx, hy]⟩
+  use ⟨⟨x1, y.val.2⟩, by simp [hx, hy]⟩
   simp [pr, hx]
-
 
 variable (R A A' L) in
 def basechange_ker : LieIdeal R (preBasechange R A A' L) where
@@ -156,7 +133,6 @@ def basechange_ker : LieIdeal R (preBasechange R A A' L) where
       (mapOfCompatibleSMul A R A A' L) ((LinearMap.rTensor L ↑x.right) m.left) = 0
     · simp [hmright, Lie.Derivation.ofDerivation_apply]
     refine Submodule.closure_induction (by simp) (by grind only [= map_add, lie_add]) ?_ hmleft
-    clear hm hmright hmleft
     -- since the set generating the span is multiplicatively closed we may assume `a = 1`
     intro a
     wlog ha : a = 1 generalizing a with H
