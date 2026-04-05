@@ -60,46 +60,32 @@ variable {L : Type*} [LieRing L] [Module A L] [LieRingModule L A] [LieRinehartRi
 
 open TensorProduct
 
+private abbrev anchor_comp := LinearMap.liftBaseChange (A := A')
+  (((Algebra.ofId A A').toLinearMap.compDer) ∘ₗ (LieRinehartAlgebra.anchor R A L).toLinearMap')
 
-private abbrev auxA : A' ⊗[A] L →ₗ[A'] Derivation R A A' where
-  toFun := TensorProduct.lift ((LinearMap.lsmul A' (Derivation R A A')).restrictScalars₁₂ A A)
-    ∘ₗ (((Algebra.ofId A A').toLinearMap.compDer)
-    ∘ₗ (LieRinehartAlgebra.anchor R A L).toLinearMap').lTensor A'
-  map_add' _ _ := by simp
-  map_smul' _ x := by
-    refine x.induction_on ?_ ?_ ?_
-    · simp
-    · intros _ _
-      ext _
-      simp [smul_tmul', Derivation.smul_apply]
-      ring
-    · simp_all
-
-variable (R A A' L) in
-def Basechange : Submodule A'  ((A' ⊗[A] L) × (Derivation R A' A')) where
-  carrier := {x | auxA (x.1) = (Derivation.compAlgebraMapL R A A' A') x.2 }
-  zero_mem' := by simp
-  add_mem' {_ _} _ _ := by simp_all
-  smul_mem' _ _ hx := by
-    rw [Set.mem_setOf_eq] at *
-    simp [hx]
-
-private abbrev auxR :  A' ⊗[R] L →ₗ[A] Derivation R A A' :=
-auxA (R:=R) (A:=A) (A':=A') (L:=L) ∘ₗ (TensorProduct.mapOfCompatibleSMul A R A A' L)
-
-private lemma aux_ext_apply' (a : A') (l : L) (z : A) : auxR (R:=R) (a⊗ₜl) (z) =
+private lemma anchor_comp_apply (a : A') (l : L) (z : A) : anchor_comp (R := R) (a⊗ₜl) (z) =
     ⁅l, z⁆ • a := by
   simp [Algebra.smul_def, mul_comm]
   rfl
 
+variable (R A A' L) in
+def Basechange : Submodule A'  ((A' ⊗[A] L) × (Derivation R A' A')) where
+  carrier := {x | anchor_comp (x.1) = (Derivation.compAlgebraMapL R A A' A') x.2 }
+  zero_mem' := by simp
+  add_mem' {_ _} _ _ := by simp_all
+  smul_mem' _ _ _ := by simp_all
+
+
+#check Derivation.compAlgebraMapL_apply_apply
 
 variable (R A A' L) in
-def preBasechange :
+private def preBasechange :
     LieSubalgebra R  ((A' ⊗[R] L) ⋊⁅(Lie.Derivation.ofDerivation L)⁆ (Derivation R A' A')) where
-  carrier := {x | auxR (x.left) = (Derivation.compAlgebraMapL R A A' A') x.right }
+  carrier := {x | anchor_comp ((mapOfCompatibleSMul A R A A' L) (x.left))
+    = (Derivation.compAlgebraMapL R A A' A') x.right }
   zero_mem' := by simp
-  add_mem' {_ _} hx hy := by simp_all
-  smul_mem' r x hx:= by simp_all
+  add_mem' {_ _} _ _ := by simp_all
+  smul_mem' _ _ _:= by simp_all
   lie_mem' {x y} hx hy := by
     -- helpful identities
     have CompL_apply (d : Derivation R A' A') (z : A) :
@@ -108,10 +94,12 @@ def preBasechange :
     classical
     obtain ⟨Sx, h_x_as_sum⟩ := exists_finset (x.left)
     replace hx (t : A) := congrArg (fun f => f t) hx
-    simp_rw [h_x_as_sum, map_sum, Derivation.sum_apply, aux_ext_apply', CompL_apply] at hx
+    simp_rw [h_x_as_sum, map_sum, Derivation.sum_apply,mapOfCompatibleSMul_tmul ,
+      anchor_comp_apply, CompL_apply] at hx
     obtain ⟨Sy, h_y_as_sum⟩ := exists_finset (y.left)
     replace hy (t : A) := congrArg (fun f => f t) hy
-    simp only [h_y_as_sum, map_sum, Derivation.sum_apply, aux_ext_apply', CompL_apply] at hy
+    simp only [h_y_as_sum, map_sum, Derivation.sum_apply, mapOfCompatibleSMul_tmul ,
+      anchor_comp_apply, CompL_apply] at hy
     -- simplifying the main goal
     ext z
     simp_rw [LieAlgebra.SemiDirectSum.lie_eq_mk]
@@ -122,7 +110,8 @@ def preBasechange :
     -- transform LHS
     simp_rw [h_x_as_sum, h_y_as_sum, sum_lie_sum, map_sum, Lie.Derivation.ofDerivation_apply,
       LinearMap.rTensor_tmul, map_sub,map_add, map_sum, Derivation.sub_apply, Derivation.add_apply,
-      Derivation.sum_apply, LieAlgebra.ExtendScalars.bracket_tmul, aux_ext_apply', lie_lie,sub_smul,
+      Derivation.sum_apply, LieAlgebra.ExtendScalars.bracket_tmul, mapOfCompatibleSMul_tmul ,
+      anchor_comp_apply, lie_lie,sub_smul,
       smul_eq_mul, Finset.sum_sub_distrib]
     -- make them cancel
     rw [← sub_eq_zero]
@@ -148,7 +137,7 @@ private lemma pr_surjective : Function.Surjective (pr R A A' L) := by
   let x1 := Function.surjInv (mapOfCompatibleSMul_surjective A R A A' L) y.val.1
   have hx : ((mapOfCompatibleSMul A R A A' L) x1) = y.val.1 := by simp [x1, Function.surjInv_eq]
   use ⟨⟨x1, y.val.2⟩, by
-    simp only [preBasechange, LinearMap.coe_comp, Function.comp_apply, LieSubalgebra.mem_mk_iff',
+    simp only [preBasechange, LieSubalgebra.mem_mk_iff',
       Submodule.mem_mk, AddSubmonoid.mem_mk, AddSubsemigroup.mem_mk, Set.mem_setOf_eq]
     simp [hx, hy]⟩
   simp [pr, hx]
@@ -186,7 +175,7 @@ def basechange_ker : LieIdeal R (preBasechange R A A' L) where
     --
     refine x.left.induction_on (by simp) ?_ ?_
     · intros c z
-      rw [aux_ext_apply']
+      rw [mapOfCompatibleSMul_tmul, anchor_comp_apply]
       simp [tmul_add, smul_tmul']
       ring_nf
       abel_nf
