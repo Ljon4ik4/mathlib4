@@ -18,6 +18,24 @@ int the `TensorProduct` namespace, as indicated in the doc of the surjectivity o
 
 
 section
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {s : Set M}
+open AddSubmonoid Submodule Function Set Pointwise in
+/-- A variant of `span_induction` that combines `∀ x ∈ s, p x` and `∀ r x, p x → p (r • x)`
+into a single condition `∀ r, ∀ x ∈ s, p (r • x)`, which can be easier to verify. -/
+@[elab_as_elim]
+theorem closure_induction' {p : (x : M) → x ∈ span R s → Prop}
+    (zero : p 0 (Submodule.zero_mem _))
+    (add : ∀ x y hx hy, p x hx → p y hy → p (x + y) (Submodule.add_mem _ ‹_› ‹_›))
+    (mem : ∀ (x) (h : x ∈ s), p x (subset_span h))
+    (smul_set : ∀ (r : R) (x : M) (h : x ∈ s),  (r • x) ∈ s)
+    (hx : x ∈ span R s) : p x hx := by
+  refine Submodule.closure_induction (p := p) zero add ?_ hx  
+  grind
+end
+ 
+
+section
 variable {R : Type*} {A : Type*} {M : Type*}
 variable [CommSemiring R] [CommSemiring A] [AddCommMonoid M]
 variable [Algebra R A]
