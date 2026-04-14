@@ -30,7 +30,7 @@ theorem closure_induction' {p : (x : M) → x ∈ span R s → Prop}
     (mem : ∀ (x) (h : x ∈ s), p x (subset_span h))
     (smul_set : ∀ (r : R) (x : M) (h : x ∈ s),  (r • x) ∈ s) {x}
     (hx : x ∈ span R s) : p x hx := by
-  refine Submodule.closure_induction (p := p) zero add ?_ hx  
+  refine Submodule.closure_induction (p := p) zero add ?_ hx
   simp_all
 end
  
