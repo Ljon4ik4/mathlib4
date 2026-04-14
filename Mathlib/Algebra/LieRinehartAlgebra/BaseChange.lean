@@ -33,7 +33,7 @@ theorem closure_induction' {p : (x : M) → x ∈ span R s → Prop}
   refine Submodule.closure_induction (p := p) zero add ?_ hx
   simp_all
 end
- 
+
 
 section
 variable {R : Type*} {A : Type*} {M : Type*}
@@ -171,7 +171,7 @@ def basechange_ker : LieIdeal R (preBasechange R A A' L) where
     · rintro p q hp hq
       simp_rw [add_lie, map_add, Derivation.add_apply, smul_add, add_tmul]
       grind
-    
+
 
 private noncomputable abbrev iso : ((preBasechange R A A' L) ⧸ (basechange_ker R A A' L))
     ≃ₗ[R] (Basechange R A A' L)
