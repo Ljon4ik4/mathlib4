@@ -28,10 +28,10 @@ theorem closure_induction' {p : (x : M) → x ∈ span R s → Prop}
     (zero : p 0 (Submodule.zero_mem _))
     (add : ∀ x y hx hy, p x hx → p y hy → p (x + y) (Submodule.add_mem _ ‹_› ‹_›))
     (mem : ∀ (x) (h : x ∈ s), p x (subset_span h))
-    (smul_set : ∀ (r : R) (x : M) (h : x ∈ s),  (r • x) ∈ s)
+    (smul_set : ∀ (r : R) (x : M) (h : x ∈ s),  (r • x) ∈ s) {x}
     (hx : x ∈ span R s) : p x hx := by
   refine Submodule.closure_induction (p := p) zero add ?_ hx  
-  grind
+  simp_all
 end
  
 
@@ -150,23 +150,18 @@ def basechange_ker : LieIdeal R (preBasechange R A A' L) where
     convert_to (mapOfCompatibleSMul A R A A' L) ⁅x.left, m.left⁆ +
       (mapOfCompatibleSMul A R A A' L) ((LinearMap.rTensor L ↑x.right) m.left) = 0
     · simp [hmright, Lie.Derivation.ofDerivation_apply]
-    refine Submodule.closure_induction (by simp) (by grind only [= map_add, lie_add]) ?_ hmleft
-    -- since the set generating the span is multiplicatively closed we may assume `a = 1`
-    intro a
-    wlog ha : a = 1 generalizing a with H
-    · rintro q ⟨b,b',l,hq⟩
-      simp only [forall_eq, one_smul] at H
-      refine H (a • q) ⟨b, a • b', l, ?_⟩
-      simp_rw [hq.symm,  smul_sub, smul_tmul']
+    refine closure_induction' (by simp) (by grind only [= map_add, lie_add]) ?_ ?_ hmleft
+    · rintro a x ⟨b, b', l, h⟩
+      use b, a • b', l
+      simp_rw [← h, smul_sub, smul_tmul']
       rw [← sub_eq_zero, smul_comm]
       abel_nf
     rintro y ⟨b, a', l, hy⟩
-    rw [ha, one_smul, hy.symm]
+    rw [hy.symm]
     -- now we rewrite the target s.th. we can replace x.right
     simp only [lie_sub, map_sub, LinearMap.rTensor_tmul, Derivation.coeFn_coe,
       mapOfCompatibleSMul_tmul, tmul_smul]
     simp_rw [Derivation.leibniz_smul, hx.symm, add_tmul, smul_tmul', add_sub_cancel_left]
-    --
     refine x.left.induction_on (by simp) ?_ ?_
     · intros c z
       rw [mapOfCompatibleSMul_tmul, anchor_comp_apply]
@@ -176,6 +171,7 @@ def basechange_ker : LieIdeal R (preBasechange R A A' L) where
     · rintro p q hp hq
       simp_rw [add_lie, map_add, Derivation.add_apply, smul_add, add_tmul]
       grind
+    
 
 private noncomputable abbrev iso : ((preBasechange R A A' L) ⧸ (basechange_ker R A A' L))
     ≃ₗ[R] (Basechange R A A' L)
