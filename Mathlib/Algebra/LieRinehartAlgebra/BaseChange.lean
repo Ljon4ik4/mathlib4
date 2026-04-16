@@ -183,13 +183,13 @@ noncomputable instance : LieRing (Basechange R A A' L) where
   lie_self _  := by simp
   leibniz_lie _ _ _ := by simp
 
-lemma bracket_formula (x y : Basechange R A A' L) (Sx Sy : Finset (A'× L)) (lx ly : Derivation R A' A') 
-    (hx : x.val = (∑ i ∈ Sx, i.1 ⊗ₜ i.2, lx)) (hy : y.val = (∑ i ∈ Sy, i.1 ⊗ₜ i.2, ly)) : 
-    ⁅x, y⁆.val = ((∑ i ∈  Sx, ∑ j ∈ Sy, (i.1*j.1) ⊗ₜ ⁅i.2, j.2⁆) + (∑ j ∈ Sy, lx (j.1)⊗ₜj.2) 
-    - (∑ i ∈ Sx, ly (i.1)⊗ₜi.2), ⁅lx, ly⁆) 
-    := by 
+lemma bracket_formula (x y : Basechange R A A' L) (Sx Sy : Finset (A'× L)) (lx ly : Derivation R A' A')
+    (hx : x.val = (∑ i ∈ Sx, i.1 ⊗ₜ i.2, lx)) (hy : y.val = (∑ i ∈ Sy, i.1 ⊗ₜ i.2, ly)) :
+    ⁅x, y⁆.val = ((∑ i ∈  Sx, ∑ j ∈ Sy, (i.1*j.1) ⊗ₜ ⁅i.2, j.2⁆) + (∑ j ∈ Sy, lx (j.1)⊗ₜj.2)
+    - (∑ i ∈ Sx, ly (i.1)⊗ₜi.2), ⁅lx, ly⁆)
+    := by
   sorry
-  
+
 private lemma bracket_unfold (x y : (Basechange R A A' L)) : ⁅x, y⁆ = iso ⁅ iso.symm x, iso.symm y⁆
   := rfl
 
