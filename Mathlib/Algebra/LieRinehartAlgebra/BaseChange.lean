@@ -172,7 +172,6 @@ def basechange_ker : LieIdeal R (preBasechange R A A' L) where
       simp_rw [add_lie, map_add, Derivation.add_apply, smul_add, add_tmul]
       grind
 
-
 private noncomputable abbrev iso : ((preBasechange R A A' L) ⧸ (basechange_ker R A A' L))
     ≃ₗ[R] (Basechange R A A' L)
   := LinearMap.quotKerEquivOfSurjective (pr R A A' L) (pr_surjective)
@@ -184,6 +183,13 @@ noncomputable instance : LieRing (Basechange R A A' L) where
   lie_self _  := by simp
   leibniz_lie _ _ _ := by simp
 
+lemma bracket_formula (x y : Basechange R A A' L) (Sx Sy : Finset (A'× L)) (lx ly : Derivation R A' A') 
+    (hx : x.val = (∑ i ∈ Sx, i.1 ⊗ₜ i.2, lx)) (hy : y.val = (∑ i ∈ Sy, i.1 ⊗ₜ i.2, ly)) : 
+    ⁅x, y⁆.val = ((∑ i ∈  Sx, ∑ j ∈ Sy, (i.1*j.1) ⊗ₜ ⁅i.2, j.2⁆) + (∑ j ∈ Sy, lx (j.1)⊗ₜj.2) 
+    - (∑ i ∈ Sx, ly (i.1)⊗ₜi.2), ⁅lx, ly⁆) 
+    := by 
+  sorry
+  
 private lemma bracket_unfold (x y : (Basechange R A A' L)) : ⁅x, y⁆ = iso ⁅ iso.symm x, iso.symm y⁆
   := rfl
 
@@ -198,17 +204,12 @@ private noncomputable def iso' : ((preBasechange R A A' L) ⧸ (basechange_ker R
 noncomputable def snd : (Basechange R A A' L) →ₗ⁅R⁆ Derivation R A' A' where
   __ := (LinearMap.snd R (A' ⊗[A] L) (Derivation R A' A')) ∘ₗ ((Basechange R A A' L).subtype)
   map_lie' {x y} := by
-    simp only [bracket_unfold, AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearMap.coe_comp,
-      LinearMap.coe_snd, LinearMap.coe_restrictScalars, Submodule.coe_subtype, Function.comp_apply]
-    have h_iso : ∀ x y : (preBasechange R A A' L) ⧸ (basechange_ker R A A' L), -- autogen, to improve
+    have h_iso (x y : (preBasechange R A A' L) ⧸ (basechange_ker R A A' L)) :
       (iso ⁅x, y⁆).val.2 = ⁅(iso x).val.2, (iso y).val.2⁆ := by
-      intro x y
       induction x using Quotient.inductionOn
       induction y using Quotient.inductionOn
       rfl
-    convert h_iso (iso.symm x) (iso.symm y)
-    · simp
-    · simp
+    simp [bracket_unfold, h_iso]
 
 noncomputable instance : LieRingModule  (Basechange R A A' L) A' where
   bracket x a := (snd x) a
