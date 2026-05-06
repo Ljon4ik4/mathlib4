@@ -19,6 +19,7 @@ int the `TensorProduct` namespace, as indicated in the doc of the surjectivity o
 
 section
 
+-- maybe use the additive submonoid closure induction instead, this seems unnecessary
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {s : Set M}
 open AddSubmonoid Submodule Function Set Pointwise in
 /-- A variant of `span_induction` that combines `∀ x ∈ s, p x` and `∀ r x, p x → p (r • x)`
@@ -78,7 +79,7 @@ variable {L : Type*} [LieRing L] [Module A L] [LieRingModule L A] [LieRinehartRi
 
 open TensorProduct
 
-private def anchor_comp := LinearMap.liftBaseChange (A := A')
+private def anchor_comp : A'⊗[A] L →ₗ[A'] Derivation R A A' := LinearMap.liftBaseChange (A := A')
   (((Algebra.ofId A A').toLinearMap.compDer) ∘ₗ (LieRinehartAlgebra.anchor R A L).toLinearMap')
 
 private lemma anchor_comp_apply (a : A') (l : L) (z : A) : anchor_comp (R := R) (a⊗ₜl) (z) =
@@ -86,13 +87,13 @@ private lemma anchor_comp_apply (a : A') (l : L) (z : A) : anchor_comp (R := R) 
   simp [Algebra.smul_def, mul_comm]
   rfl
 
+-- is it not a problem to have a private definition in the carrier?
 variable (R A A' L) in
 def Basechange : Submodule A'  ((A' ⊗[A] L) × (Derivation R A' A')) where
   carrier := {x | anchor_comp (x.1) = (Derivation.compAlgebraMapL R A A' A') x.2 }
   zero_mem' := by simp
   add_mem' {_ _} _ _ := by simp_all
   smul_mem' _ _ _ := by simp_all
-
 
 variable (R A A' L) in
 private abbrev preBasechange :
@@ -139,7 +140,7 @@ private lemma pr_surjective : Function.Surjective (pr R A A' L) := by
   simp [pr, hx]
 
 variable (R A A' L) in
-def basechange_ker : LieIdeal R (preBasechange R A A' L) where
+private def basechange_ker : LieIdeal R (preBasechange R A A' L) where
   __ := LinearMap.ker (pr R A A' L)
   lie_mem := by
     rintro ⟨x, hx⟩ ⟨m, _⟩ hm
@@ -188,6 +189,8 @@ lemma bracket_formula (x y : Basechange R A A' L) (Sx Sy : Finset (A'× L)) (lx 
     ⁅x, y⁆.val = ((∑ i ∈  Sx, ∑ j ∈ Sy, (i.1*j.1) ⊗ₜ ⁅i.2, j.2⁆) + (∑ j ∈ Sy, lx (j.1)⊗ₜj.2)
     - (∑ i ∈ Sx, ly (i.1)⊗ₜi.2), ⁅lx, ly⁆)
     := by
+  let xx : preBasechange R A A' L := ⟨⟨∑ i ∈ Sx, i.1 ⊗ₜ[R] i.2, lx⟩, by sorry⟩
+  let yy : preBasechange R A A' L := ⟨⟨∑ i ∈ Sy, i.1 ⊗ₜ[R] i.2, ly⟩, sorry⟩
   sorry
 
 private lemma bracket_unfold (x y : (Basechange R A A' L)) : ⁅x, y⁆ = iso ⁅ iso.symm x, iso.symm y⁆
