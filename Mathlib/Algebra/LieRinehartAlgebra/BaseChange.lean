@@ -13,9 +13,7 @@ section
 # Todos:
 - `TensorProduct.AlgebraTensorModule.ker_mapOfCompatibleSMul` is a bad namespace it should be just
 int the `TensorProduct` namespace, as indicated in the doc of the surjectivity of the map
-
 -/
-
 
 section
 
@@ -29,7 +27,7 @@ theorem closure_induction' {p : (x : M) → x ∈ span R s → Prop}
     (zero : p 0 (Submodule.zero_mem _))
     (add : ∀ x y hx hy, p x hx → p y hy → p (x + y) (Submodule.add_mem _ ‹_› ‹_›))
     (mem : ∀ (x) (h : x ∈ s), p x (subset_span h))
-    (smul_set : ∀ (r : R) (x : M) (h : x ∈ s),  (r • x) ∈ s) {x}
+    (smul_set : ∀ (r : R) (x : M) (_ : x ∈ s), (r • x) ∈ s) {x}
     (hx : x ∈ span R s) : p x hx := by
   refine Submodule.closure_induction (p := p) zero add ?_ hx
   simp_all
@@ -56,7 +54,6 @@ theorem Derivation.sum_apply {ι : Type*} (t : Finset ι) (f : ι → (Derivatio
   rw [← Derivation.coeFn_coe, Derivation.coe_sum_linear_maps, LinearMap.sum_apply]
   simp
 
-
 variable {B : Type*} [CommSemiring B] [Algebra R B] [Algebra A B] [Module B M]
 [IsScalarTower R A B] [IsScalarTower A B M] [IsScalarTower R B M]
 theorem Derivation.leibniz_smul (d : Derivation R B M) (a : A) (b : B) : d (a • b) =
@@ -65,7 +62,7 @@ theorem Derivation.leibniz_smul (d : Derivation R B M) (a : A) (b : B) : d (a �
 
 end
 
-
+namespace LieRinehartAlgebra
 
 section
 
@@ -76,42 +73,49 @@ variable {A' : Type*} [CommRing A'] [Algebra R A'] [Algebra A A'] [IsScalarTower
 variable {L : Type*} [LieRing L] [Module A L] [LieRingModule L A] [LieRinehartRing A L]
     [LieAlgebra R L] [LieRinehartAlgebra R A L]
 
-
 open TensorProduct
 
-private def anchor_comp : A'⊗[A] L →ₗ[A'] Derivation R A A' := LinearMap.liftBaseChange (A := A')
-  (((Algebra.ofId A A').toLinearMap.compDer) ∘ₗ (LieRinehartAlgebra.anchor R A L).toLinearMap')
+def relative_anchor : A'⊗[A] L →ₗ[A'] Derivation R A A' :=
+  LinearMap.liftBaseChange (A := A') (((Algebra.ofId A A').toLinearMap.compDer)
+  ∘ₗ (LieRinehartAlgebra.anchor R A L).toLinearMap')
 
-private lemma anchor_comp_apply (a : A') (l : L) (z : A) : anchor_comp (R := R) (a⊗ₜl) (z) =
+lemma relative_anchor_apply (a : A') (l : L) (z : A) : relative_anchor (R := R) (a⊗ₜl) (z) =
     ⁅l, z⁆ • a := by
   simp [Algebra.smul_def, mul_comm]
   rfl
 
--- is it not a problem to have a private definition in the carrier?
 variable (R A A' L) in
 def Basechange : Submodule A'  ((A' ⊗[A] L) × (Derivation R A' A')) where
-  carrier := {x | anchor_comp (x.1) = (Derivation.compAlgebraMapL R A A' A') x.2 }
+  carrier := {x | relative_anchor x.1 = Derivation.compAlgebraMapL R A A' A' x.2}
   zero_mem' := by simp
   add_mem' {_ _} _ _ := by simp_all
   smul_mem' _ _ _ := by simp_all
 
+lemma loc_formula (x : Basechange R A A' L) (Sx : Finset (A' × L))
+    (hx : ∑ i ∈ Sx, i.1 ⊗ₜ i.2 = x.val.1) (z : A) :
+    ∑ i ∈ Sx, ⁅i.2, z⁆ • i.1 = (x.val.2).compAlgebraMap A z := by
+  let h : _ = _ := x.property
+  replace h :=  DFunLike.congr_fun h z
+  simp_rw [← hx, map_sum, Derivation.sum_apply, relative_anchor_apply] at h
+  exact h
+
 variable (R A A' L) in
 private abbrev preBasechange :
     LieSubalgebra R  ((A' ⊗[R] L) ⋊⁅(Lie.Derivation.ofDerivation L)⁆ (Derivation R A' A')) where
-  carrier := {x | anchor_comp ((mapOfCompatibleSMul A R A A' L) (x.left))
+  carrier := {x | relative_anchor ((mapOfCompatibleSMul A R A A' L) (x.left))
     = (Derivation.compAlgebraMapL R A A' A') x.right }
   zero_mem' := by simp
   add_mem' {_ _} _ _ := by simp_all
   smul_mem' _ _ _:= by simp_all
   lie_mem' {x y} hx hy := by
-    replace hx (t : A) := congrArg (fun f => f t) hx
-    replace hy (t : A) := congrArg (fun f => f t) hy
+    replace hx (t : A) := DFunLike.congr_fun hx t
+    replace hy (t : A) := DFunLike.congr_fun hy t
     ext z
     rw [← sub_eq_zero]
     obtain ⟨Sx, h_x_as_sum⟩ := exists_finset (x.left)
     obtain ⟨Sy, h_y_as_sum⟩ := exists_finset (y.left)
     -- should 'only' be added to the simps here?
-    simp_all [Derivation.commutator_apply, sum_lie_sum, Derivation.sum_apply, anchor_comp_apply]
+    simp_all [Derivation.commutator_apply, sum_lie_sum, Derivation.sum_apply, relative_anchor_apply]
     simp [← hx, ← hy, Derivation.leibniz_smul, sub_smul, Finset.sum_add_distrib]
     ring_nf
     simp_rw [Finset.mul_sum, (Finset.sum_comm (s:=Sy) (t := Sx))]
@@ -165,7 +169,7 @@ private def basechange_ker : LieIdeal R (preBasechange R A A' L) where
     simp_rw [Derivation.leibniz_smul, hx.symm, add_tmul, smul_tmul', add_sub_cancel_left]
     refine x.left.induction_on (by simp) ?_ ?_
     · intros c z
-      rw [mapOfCompatibleSMul_tmul, anchor_comp_apply]
+      rw [mapOfCompatibleSMul_tmul, relative_anchor_apply]
       simp [tmul_add, smul_tmul']
       ring_nf
       abel_nf
@@ -184,12 +188,16 @@ noncomputable instance : LieRing (Basechange R A A' L) where
   lie_self _  := by simp
   leibniz_lie _ _ _ := by simp
 
-lemma bracket_formula (x y : Basechange R A A' L) (Sx Sy : Finset (A'× L)) (lx ly : Derivation R A' A')
-    (hx : x.val = (∑ i ∈ Sx, i.1 ⊗ₜ i.2, lx)) (hy : y.val = (∑ i ∈ Sy, i.1 ⊗ₜ i.2, ly)) :
+lemma bracket_formula (x y : Basechange R A A' L) (Sx Sy : Finset (A' × L))
+  (lx ly : Derivation R A' A') (hx : x.val = (∑ i ∈ Sx, i.1 ⊗ₜ i.2, lx))
+  (hy : y.val = (∑ i ∈ Sy, i.1 ⊗ₜ i.2, ly)) :
     ⁅x, y⁆.val = ((∑ i ∈  Sx, ∑ j ∈ Sy, (i.1*j.1) ⊗ₜ ⁅i.2, j.2⁆) + (∑ j ∈ Sy, lx (j.1)⊗ₜj.2)
     - (∑ i ∈ Sx, ly (i.1)⊗ₜi.2), ⁅lx, ly⁆)
     := by
-  let xx : preBasechange R A A' L := ⟨⟨∑ i ∈ Sx, i.1 ⊗ₜ[R] i.2, lx⟩, by sorry⟩
+  let xx : preBasechange R A A' L := ⟨⟨∑ i ∈ Sx, i.1 ⊗ₜ[R] i.2, lx⟩, by
+    simp
+    sorry
+    ⟩
   let yy : preBasechange R A A' L := ⟨⟨∑ i ∈ Sy, i.1 ⊗ₜ[R] i.2, ly⟩, sorry⟩
   sorry
 
@@ -226,7 +234,7 @@ private lemma lbracket_apply (x : (Basechange R A A' L)) (a : A') : ⁅x, a⁆ =
 
 noncomputable instance : LieRinehartRing A' (Basechange R A A' L) where
   lie_smul_eq_mul' _ _ x := by
-    obtain ⟨_, _⟩ := x --why needed?
+    obtain ⟨_, _⟩ := x
     simp
     rfl
   leibniz_mul_right' x a b := by simp [lbracket_apply, mul_comm]
@@ -236,5 +244,7 @@ noncomputable instance : LieRinehartRing A' (Basechange R A A' L) where
 
 
 
+
 end
+end LieRinehartAlgebra
 end
