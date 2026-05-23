@@ -40,8 +40,72 @@ variable {B : Type*} [CommSemiring B] [Algebra R B] [Algebra A B] [Module B M]
 theorem Derivation.leibniz_smul (d : Derivation R B M) (a : A) (b : B) : d (a • b) =
     a • (d b) + b • (d.compAlgebraMapL R A B M a) := by
   simp [Algebra.smul_def]
+end
+
+namespace Equiv
+
+section
+
+variable {R α β : Type*} [CommRing R] (e : α ≃ β)
+
+/-- Transfer `LieRing` across an `Equiv` -/
+protected abbrev lieRing [LieRing β] : LieRing α where
+  __ := e.addCommGroup
+  bracket x y := e.symm ⁅e x, e y⁆
+  add_lie _ _ _ := by simp [add_def]
+  lie_add _ _ _ := by simp [add_def]
+  lie_self _ := by simp [zero_def]
+  leibniz_lie _ _ _ := by simp [add_def]
+
+lemma bracket_def [LieRing β] (x y : α) :
+    letI := Equiv.lieRing e
+    ⁅x, y⁆ = e.symm ⁅e x, e y⁆ := rfl
+
+/-- Transfer `LieAlgebra` across an `Equiv` -/
+protected abbrev lieAlgebra (e : α ≃ β) [LieRing β] [LieAlgebra R β] :
+    letI := Equiv.lieRing e
+    letI := Equiv.module (R := R) e
+    LieAlgebra R α :=
+  letI := Equiv.lieRing e
+  letI := Equiv.module (R:= R) e
+  { lie_smul _ _ _ := by simp [Equiv.smul_def, Equiv.bracket_def] }
 
 end
+
+section
+variable {α β : Type*} [AddCommGroup α] [LieRing β]
+
+/-- Transfer `LieRing` across an `AddEquiv` -/
+protected abbrev lieRing' (e : α ≃+ β) : LieRing α where
+  bracket x y := e.symm ⁅e x, e y⁆
+  add_lie _ _ _ := by simp
+  lie_add _ _ _ := by simp
+  lie_self _ := by simp
+  leibniz_lie _ _ _ := by simp
+
+lemma bracket_def' (e : α ≃+ β) (x y : α) :
+    letI := Equiv.lieRing' e
+    ⁅x, y⁆ = e.symm ⁅e x, e y⁆ := rfl
+
+variable {R : Type*} [CommRing R] [Module R α] [LieAlgebra R β]
+
+/-- Transfer `LieAlgebra` across a `LinearEquiv` -/
+protected abbrev lieAlgebra' (e : α ≃ₗ[R] β) :
+    letI := Equiv.lieRing' e.toAddEquiv
+    LieAlgebra R α :=
+  letI := Equiv.lieRing' e.toAddEquiv
+  { lie_smul _ _ _ := by simp [bracket_def'] }
+
+
+end
+
+
+
+end Equiv
+
+
+
+
 
 namespace LieRinehartAlgebra
 
@@ -125,6 +189,13 @@ private abbrev preBasechange :
     intro _ _
     ring_nf
 
+private instance : Module A' ((A' ⊗[R] L) ⋊⁅(Lie.Derivation.ofDerivation L)⁆ (Derivation R A' A'))
+  := (LieAlgebra.SemiDirectSum.toProd).module (R:= A')
+
+private instance : IsScalarTower R A'
+    ((A' ⊗[R] L) ⋊⁅(Lie.Derivation.ofDerivation L)⁆ (Derivation R A' A'))
+  := (LieAlgebra.SemiDirectSum.toProd).isScalarTower (M := R) (N := A')
+
 --this should have a better name, and it should be improved to be A' linear, but for that A'-module
 --  of prebasechange is needed
 variable (R A A' L) in
@@ -142,7 +213,7 @@ private lemma pr_surjective : Function.Surjective (pr R A A' L) := by
   simp [pr, hx]
 
 variable (R A A' L) in
-private def basechange_ker : LieIdeal R (preBasechange R A A' L) where
+private abbrev basechange_ker : LieIdeal R (preBasechange R A A' L) where
   __ := LinearMap.ker (pr R A A' L)
   lie_mem := by
     rintro ⟨x, hx : _ = _⟩ ⟨m, _⟩ hm
@@ -266,7 +337,6 @@ noncomputable instance : LieRinehartRing A' (Basechange R A A' L) where
     refine Subtype.ext_iff.mpr ?_
     refine Prod.ext ?_ ?_
     · simp only [Submodule.coe_add, SetLike.val_smul, Prod.fst_add, Prod.smul_fst]
-      -- rather use quotient induction here
       obtain ⟨x', hx⟩ := pr_surjective x
       obtain ⟨y', hy⟩ := pr_surjective y
       simp_rw [←hx, ←hy]
