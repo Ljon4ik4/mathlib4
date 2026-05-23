@@ -85,6 +85,7 @@ lemma finset_mem (S : Finset (A' × L)) (v : Derivation R A' A') :
     simp_rw [map_sum, Derivation.sum_apply, relative_anchor_apply, h]
     rfl
 
+-- this is an $A'$-module, this is helpful in a proof later
 variable (R A A' L) in
 private abbrev preBasechange :
     LieSubalgebra R  ((A' ⊗[R] L) ⋊⁅(Lie.Derivation.ofDerivation L)⁆ (Derivation R A' A')) where
@@ -124,14 +125,14 @@ private abbrev preBasechange :
     intro _ _
     ring_nf
 
+--this should have a better name, and it should be improved to be A' linear, but for that A'-module
+--  of prebasechange is needed
 variable (R A A' L) in
 private abbrev pr : (preBasechange R A A' L) →ₗ[R] (Basechange R A A' L) where
   toFun x := ⟨ (Prod.map (TensorProduct.mapOfCompatibleSMul A R A A' L) id)
     (LieAlgebra.SemiDirectSum.toProd x), by have hx : (_ = _) := x.property; simpa using hx⟩
   map_add'  := by simp
   map_smul' := by simp
-
---private lemma pr_val (x : preBasechange R A A' L)
 
 private lemma pr_surjective : Function.Surjective (pr R A A' L) := by
   intro y
@@ -179,10 +180,12 @@ private def basechange_ker : LieIdeal R (preBasechange R A A' L) where
       simp_rw [add_lie, map_add, Derivation.add_apply, smul_add, add_tmul]
       grind
 
+-- better name?
 private noncomputable abbrev iso : ((preBasechange R A A' L) ⧸ (basechange_ker R A A' L))
     ≃ₗ[R] (Basechange R A A' L)
   := LinearMap.quotKerEquivOfSurjective (pr R A A' L) (pr_surjective)
 
+-- this might be replaceable by something standard, no need for extra lemma
 private lemma iso_comp (x : preBasechange R A A' L) : (pr R A A' L x) =
     iso (LieSubmodule.Quotient.mk x) := by rfl
 
@@ -196,6 +199,14 @@ noncomputable instance : LieRing (Basechange R A A' L) where
 private lemma bracket_unfold (x y : (Basechange R A A' L)) : ⁅x, y⁆ = iso ⁅ iso.symm x, iso.symm y⁆
   := rfl
 
+-- there could also be a new def of a better pr, moreover, it is A'linear
+private lemma pr_lie (x y : preBasechange R A A' L) :
+    ⁅(pr R A A' L) x, (pr R A A' L) y⁆ = (pr R A A' L) (⁅x, y⁆) := by
+  simp_rw [bracket_unfold, iso_comp, LinearEquiv.symm_apply_apply, LieSubmodule.Quotient.mk_bracket]
+
+-- I don't know what the useful framing is, possibly everything would work better with Multisets
+-- rather than finite sets, then at least gettin the description of $ay$ from the one of $y$ would
+-- be easier
 lemma bracket_formula (x y : Basechange R A A' L) (Sx Sy : Finset (A' × L))
     (hx : ∑ i ∈ Sx, i.1 ⊗ₜ i.2 = x.val.1) (hy : ∑ i ∈ Sy, i.1 ⊗ₜ i.2 = y.val.1) :
     ⁅x, y⁆.val = ((∑ i ∈  Sx, ∑ j ∈ Sy, (i.1*j.1) ⊗ₜ ⁅i.2, j.2⁆) + (∑ j ∈ Sy, x.val.2 (j.1)⊗ₜj.2)
@@ -215,6 +226,7 @@ lemma bracket_formula (x y : Basechange R A A' L) (Sx Sy : Finset (A' × L))
 noncomputable instance : LieAlgebra R (Basechange R A A' L) where
   lie_smul _ _ _ := by simp [bracket_unfold]
 
+-- this is not really used, it might be related/ replace pr_lie
 private noncomputable def iso' : ((preBasechange R A A' L) ⧸ (basechange_ker R A A' L))
     ≃ₗ⁅R⁆ (Basechange R A A' L) where
   __ := iso
@@ -253,28 +265,16 @@ noncomputable instance : LieRinehartRing A' (Basechange R A A' L) where
   leibniz_smul_right' x y a := by
     refine Subtype.ext_iff.mpr ?_
     refine Prod.ext ?_ ?_
-    · obtain ⟨Sx, h_x_as_sum⟩ := exists_finset (x.val.1)
-      obtain ⟨Sy, h_y_as_sum⟩ := exists_finset (y.val.1)
-      let Say : Finset (A' × L) := sorry -- Sy.image (fun i => (a • i.1, i.2))
+    · simp only [Submodule.coe_add, SetLike.val_smul, Prod.fst_add, Prod.smul_fst]
+      -- rather use quotient induction here
+      obtain ⟨x', hx⟩ := pr_surjective x
+      obtain ⟨y', hy⟩ := pr_surjective y
+      simp_rw [←hx, ←hy]
+      simp_rw [pr_lie]
+      -- this is a place where A'-linearity of pr would be useful
       sorry
     · simp [← snd'_apply, snd'_smul_apply]
       rfl
-
-
-
-
-    --simp [lbracket_apply]
-    --obtain ⟨Sx, h_x_as_sum⟩ := exists_finset (x.val.1)
-    --obtain ⟨Sy, h_y_as_sum⟩ := exists_finset (y.val.1)
-    --refine Subtype.ext_iff.mpr ?_
-    --simp
-    --rw [(bracket_formula x y Sx Sy)]
-
-
-
-
-
-
 
 
 end
