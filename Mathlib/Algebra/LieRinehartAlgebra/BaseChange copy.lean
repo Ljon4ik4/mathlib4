@@ -6,6 +6,8 @@ import Mathlib.LinearAlgebra.TensorProduct.Quotient
 import Mathlib.Algebra.Lie.Derivation.BaseChange
 import Mathlib.Algebra.Lie.SemiDirect
 
+import Mathlib.Algebra.Lie.TransferInstance
+
 section
 
 /-
@@ -41,64 +43,6 @@ theorem Derivation.leibniz_smul (d : Derivation R B M) (a : A) (b : B) : d (a �
   simp [Algebra.smul_def]
 end
 
-namespace Equiv
-
-section
--- the first section might be better defined using the second one, first transfer the add
--- str. turn the equiv into an additive one and then transfer the rest...
-variable {R α β : Type*} [CommRing R] (e : α ≃ β)
-
-/-- Transfer `LieRing` across an `Equiv` -/
-protected abbrev lieRing [LieRing β] : LieRing α where
-  __ := e.addCommGroup
-  bracket x y := e.symm ⁅e x, e y⁆
-  add_lie _ _ _ := by simp [add_def]
-  lie_add _ _ _ := by simp [add_def]
-  lie_self _ := by simp [zero_def]
-  leibniz_lie _ _ _ := by simp [add_def]
-
-lemma bracket_def [LieRing β] (x y : α) :
-    letI := Equiv.lieRing e
-    ⁅x, y⁆ = e.symm ⁅e x, e y⁆ := rfl
-
-/-- Transfer `LieAlgebra` across an `Equiv` -/
-protected abbrev lieAlgebra (e : α ≃ β) [LieRing β] [LieAlgebra R β] :
-    letI := Equiv.lieRing e
-    letI := Equiv.module (R := R) e
-    LieAlgebra R α :=
-  letI := Equiv.lieRing e
-  letI := Equiv.module (R:= R) e
-  { lie_smul _ _ _ := by simp [Equiv.smul_def, Equiv.bracket_def] }
-
-end
-
-section
-variable {α β : Type*} [AddCommGroup α] [LieRing β]
-
-/-- Transfer `LieRing` across an `AddEquiv` -/
-protected abbrev lieRing' (e : α ≃+ β) : LieRing α where
-  bracket x y := e.symm ⁅e x, e y⁆
-  add_lie _ _ _ := by simp
-  lie_add _ _ _ := by simp
-  lie_self _ := by simp
-  leibniz_lie _ _ _ := by simp
-
-lemma bracket_def' (e : α ≃+ β) (x y : α) :
-    letI := Equiv.lieRing' e
-    ⁅x, y⁆ = e.symm ⁅e x, e y⁆ := rfl
-
-variable {R : Type*} [CommRing R] [Module R α] [LieAlgebra R β]
-
-/-- Transfer `LieAlgebra` across a `LinearEquiv` -/
-instance (e : α ≃ₗ[R] β) :
-    letI := Equiv.lieRing' e.toAddEquiv
-    LieAlgebra R α :=
-  letI := Equiv.lieRing' e.toAddEquiv
-  { lie_smul _ _ _ := by simp [bracket_def'] }
-
-end
-
-end Equiv
 
 
 section
@@ -162,6 +106,49 @@ lemma finset_mem (S : Finset (A' × L)) (v : Derivation R A' A') :
     ext z
     simp_rw [map_sum, Derivation.sum_apply, relative_anchor_apply, h]
     rfl
+
+private instance : LieRing ((A' ⊗[R] L) × (Derivation R A' A')) := Equiv.lieRing
+    (LieAlgebra.SemiDirectSum.toProdl (Lie.Derivation.ofDerivation L):
+      (A' ⊗[R] L ⋊⁅(Lie.Derivation.ofDerivation L)⁆ (Derivation R A' A')) ≃ₗ[R] _
+     ).symm.toAddEquiv
+
+private lemma bracket_tmuls (a a' : A') (l l' : L) (d d' : Derivation R A' A') :
+    ⁅(a ⊗ₜ[R] l, d), (a' ⊗ₜ[R] l', d')⁆ = (( a • a') ⊗ₜ[R] ⁅l,l'⁆ + d (a') ⊗ₜ[R] l'- d' (a) ⊗ₜ[R] l,
+      ⁅d,d'⁆) := by
+  rw [Equiv.bracket_def]
+  simp
+
+private def sndl : (A' ⊗[R] L) × (Derivation R A' A') →ₗ⁅R⁆ (Derivation R A' A') where
+  toFun x := x.2
+  map_add' := by simp
+  map_smul' := by simp
+  map_lie' {_ _} := by simp [Equiv.bracket_def]
+
+private lemma sndl_apply (x : (A' ⊗[R] L) × (Derivation R A' A')) : sndl x = x.2 := rfl
+
+private lemma sndl_lin (a : A') (x : (A' ⊗[R] L) × (Derivation R A' A')) : sndl (a • x) = a • sndl x
+    := by simp [sndl_apply]
+
+private instance : LieRingModule ((A' ⊗[R] L) × (Derivation R A' A')) A' where
+  bracket l a := sndl l a
+  add_lie _ _ _ := by simp
+  lie_add _ _ _ := by simp
+  leibniz_lie _ _ _ := by simp [Derivation.commutator_apply]
+
+private lemma lrm_bracket_apply (x : (A' ⊗[R] L) × (Derivation R A' A')) (a : A') :
+    ⁅x, a⁆ = sndl x a := rfl
+
+private instance : LieRinehartRing A' ((A' ⊗[R] L) × (Derivation R A' A')) where
+  lie_smul_eq_mul' _ _ _ := by simp [lrm_bracket_apply, sndl_lin]
+  leibniz_mul_right' _ _ _ := by simp [lrm_bracket_apply, mul_comm]
+  leibniz_smul_right' x y a := by
+    obtain ⟨x1,x2⟩ := x
+    obtain ⟨y1, y2⟩ := y
+    simp [Equiv.bracket_def, lrm_bracket_apply, sndl_apply, -Lie.Derivation.ofDerivation_apply,
+    Lie.Derivation.ofDerivation_leibniz, Lie.Derivation.ofDerivation_smul, smul_sub]
+    abel
+
+
 
 -- this is an $A'$-module, this is helpful in a proof later
 variable (R A A' L) in
@@ -330,12 +317,12 @@ private noncomputable abbrev iso : ((preBasechange R A A' L) ⧸ (basechange_ker
 private lemma iso_comp (x : preBasechange R A A' L) : (pr R A A' L x) =
     iso (LieSubmodule.Quotient.mk x) := by rfl
 
-noncomputable instance : LieRing (Basechange R A A' L) := Equiv.lieRing' iso.symm.toAddEquiv
+noncomputable instance : LieRing (Basechange R A A' L) := Equiv.lieRing iso.symm.toAddEquiv
 
 -- there could also be a new def of a better pr, moreover, it is A'linear
 private lemma pr_lie (x y : preBasechange R A A' L) :
     ⁅(pr R A A' L) x, (pr R A A' L) y⁆ = (pr R A A' L) (⁅x, y⁆) := by
-  simp [Equiv.bracket_def', iso_comp]
+  simp [Equiv.bracket_def, iso_comp]
 
 -- I don't know what the useful framing is, possibly everything would work better with Multisets
 -- rather than finite sets, then at least gettin the description of $ay$ from the one of $y$ would
@@ -352,7 +339,7 @@ lemma bracket_formula (x y : Basechange R A A' L) (Sx Sy : Finset (A' × L))
       + (∑ j ∈ Sy, x.val.2 (j.1)⊗ₜj.2) - (∑ i ∈ Sx, y.val.2 (i.1)⊗ₜi.2), ⁅x.val.2, y.val.2⁆⟩ := by
     simp [ix, iy, LieAlgebra.SemiDirectSum.lie_eq_mk, sum_lie_sum]
   conv_lhs =>
-    rw [hix, hiy, iso_comp, iso_comp, Equiv.bracket_def']
+    rw [hix, hiy, iso_comp, iso_comp, Equiv.bracket_def]
     rw [LinearEquiv.coe_toAddEquiv]
     repeat rw [← LinearEquiv.coe_toAddEquiv_symm, LinearEquiv.symm_symm]
     repeat rw [LinearEquiv.coe_addEquiv_apply]
@@ -370,7 +357,7 @@ def snd' : (Basechange R A A' L) →ₗ⁅R⁆ Derivation R A' A' where
       induction x using Quotient.inductionOn
       induction y using Quotient.inductionOn
       rfl
-    simp [Equiv.bracket_def', h_iso]
+    simp [Equiv.bracket_def, h_iso]
 
 lemma snd'_apply (x : Basechange R A A' L) : snd' A' x = x.val.2 := rfl
 
