@@ -149,3 +149,57 @@ def anchor : L₁ →ₗ⁅AlgHom.id R A₁⁆ Derivation R A₁ A₁ where
   (LieRinehartAlgebra.anchor R A₁ L₁ l) a = ⁅l, a⁆ := rfl
 
 end LieRinehartAlgebra
+
+-- https://www.numdam.org/item/10.5802/aif.1624.pdf
+
+/-- A left Lie-Rinehart module over a Lie-Rinehart algebra `A L` is an `A`-module `M``, which is
+also a (left) Liering-module over `L` such that the action is `A`-linear in the `L`-entry and
+satisfies a Leibniz identity for `A`multiplication in the `M`-entry.
+-/
+class LeftLieRinehartModule (A L M : Type*) [CommRing A] [LieRing L] [Module A L]
+    [LieRingModule L A] [LieRinehartRing A L] [AddCommGroup M] [Module A M] [LieRingModule L M]
+    where
+  smul_bracket' (a : A) (l : L) (m : M) : ⁅a • l, m⁆ = a • ⁅l, m⁆
+  bracket_smul' (a : A) (l : L) (m : M) : ⁅l, a • m⁆ = a • ⁅l, m⁆ + ⁅l, a⁆ • m
+
+namespace LeftLieRinehartModule
+
+variable {A L M : Type*} [CommRing A] [LieRing L] [Module A L] [LieRingModule L A]
+  [LieRinehartRing A L] [AddCommGroup M] [Module A M] [LieRingModule L M]
+  [LeftLieRinehartModule A L M]
+
+@[simp] lemma smul_bracket (a : A) (l : L) (m : M) : ⁅a • l, m⁆ = a • ⁅l, m⁆ :=
+  LeftLieRinehartModule.smul_bracket' a l m
+
+@[simp] lemma bracket_smul (a : A) (l : L) (m : M) : ⁅l, a • m⁆ = a • ⁅l, m⁆ + ⁅l, a⁆ • m :=
+  LeftLieRinehartModule.bracket_smul' a l m
+
+
+end LeftLieRinehartModule
+
+/-- A right Lie-Rinehart module `M` over a Lie-Rinehart ring `A L` is a (left) Lie module over `L`
+and `A` satisfying appropriate Leibniz rules.
+Classically ti would rather be a right Lie module structure `M × L → L` satisfying
+`⁅m, a • l⁆ = ⁅a • m, l⁆ = a • ⁅m, l⁆ - ⁅l, a⁆ • m`. However, we adapted the definition to left
+actions, since brackets in Lean are always from the left.
+-/
+class RightLieRinehartModule (A L M : Type*) [CommRing A] [LieRing L] [Module A L]
+    [LieRingModule L A] [LieRinehartRing A L] [AddCommGroup M] [Module A M] [LieRingModule L M]
+    where
+  smul_bracket' (a : A) (l : L) (m : M) : ⁅a • l, m⁆ = a • ⁅l, m⁆ + ⁅l, a⁆ • m
+  bracket_smul' (a : A) (l : L) (m : M) : ⁅l, a • m⁆ = a • ⁅l, m⁆ + ⁅l, a⁆ • m
+
+namespace RightLieRinehartModule
+
+variable {A L M : Type*} [CommRing A] [LieRing L] [Module A L] [LieRingModule L A]
+  [LieRinehartRing A L] [AddCommGroup M] [Module A M] [LieRingModule L M]
+  [RightLieRinehartModule A L M]
+
+@[simp] lemma smul_bracket (a : A) (l : L) (m : M) : ⁅a • l, m⁆ = a • ⁅l, m⁆ + ⁅l, a⁆ • m :=
+  RightLieRinehartModule.smul_bracket' a l m
+
+@[simp] lemma bracket_smul (a : A) (l : L) (m : M) : ⁅l, a • m⁆ = a • ⁅l, m⁆ + ⁅l, a⁆ • m :=
+  RightLieRinehartModule.bracket_smul' a l m
+
+
+end RightLieRinehartModule
